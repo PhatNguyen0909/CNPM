@@ -1,37 +1,51 @@
 .header{
     height: 34vw;
     margin: 30px auto;
-    background: url('../../assets/header_img.png') no-repeat; 
+    background: url('../../assets/header_img2.png') no-repeat; 
     background-size: contain;
     position: relative;
 }
-.header-contents{
+
+.header-contents {
     position: absolute;
+    top: 49%;                 /* canh giữa theo chiều dọc */
+    left: 7;                 /* đẩy vào trong 1 chút cho thoáng */
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    align-items: start;
-    gap: 1.5vw;
-    max-width: 50%;
-    bottom: 10%;
-    left: 6vw;
+    align-items: start;  /* chữ thẳng lề trái */
+    gap: 1.2rem;              /* khoảng cách giữa các khối chữ */
+    max-width: 38%;         /* giới hạn độ rộng chữ */
+    padding: 2rem;
+    color: #fff;
     animation: fadeIn 3s;
-
 }
+
 .header-contents h2{
-    font-weight: 500;
-    color: white;
-    font-size: max(4.5vw,22px);
+    font-weight: 700;
+    color: rgb(255, 255, 255);
+    font-size: max(3.5vw,22px);
 }
 .header-contents p{
-    color: white;
-    font-size: 1vw;
+    color: rgb(253, 242, 242);
+    font-size: 1.22vw;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 450;
 }
 .header-contents button{
     border: none;
-    color: rgb(149, 147, 145);
+    color: rgb(252, 118, 8);
     font-weight: 500;
     padding: 1vw 2.3vw;
     background-color: white;
     font-size: max(1vw,13px);
     border-radius: 50px; 
+    cursor: pointer; 
+}
+
+.header-contents button:hover {
+  background-color: #FF6B35;    /* đổi nền khi hover */
+  color: #fff;                  /* chữ thành trắng */
+  transform: scale(1.05);       /* hơi phóng to */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* bóng nhẹ */
 }
