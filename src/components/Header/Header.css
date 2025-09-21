@@ -23,8 +23,8 @@
 
 .header-contents h2{
     font-weight: 700;
-    color: rgb(255, 255, 255);
-    font-size: max(3.5vw,22px);
+    color: white;
+    font-size: max(3.5vw,18px);
 }
 .header-contents p{
     color: rgb(253, 242, 242);
@@ -48,4 +48,20 @@
   color: #fff;                  /* chữ thành trắng */
   transform: scale(1.05);       /* hơi phóng to */
   box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* bóng nhẹ */
+}
+@media(max-width: 1050px){
+    .header-contents{
+        max-width: 45%;
+    }
+}
+@media(max-width: 750px){
+    .header-contents{
+        max-width: 65%;
+    }
+    .header-contents p{
+        display: none; 
+    }
+    .header-contents button{
+        padding: 2vw 4vw;
+        }
 }
