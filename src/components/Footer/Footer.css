@@ -39,3 +39,26 @@
     background-color: grey;
     border: none;
 }
+
+.footer .footer-content-left .img-logo{
+    width: 200px;
+    object-fit: contain;
+    margin-top: -4.5vw;
+    margin-bottom: -4.5vw;
+}
+
+@media (max-width:750px){
+    .footer-content{
+        display: flex;
+        flex-direction: column;
+        gap: 35px
+    }
+    .footer-copyright{
+        text-align: center;
+    }
+
+    .footer .footer-content-left .img-logo{
+    margin-top: -20vw;
+    margin-bottom: -10vw;
+    }
+}

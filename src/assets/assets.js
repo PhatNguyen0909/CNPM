@@ -116,235 +116,78 @@ export const menu_list = [
         menu_image: menu_8
     }]
 
-export const food_list = [
+export const restaurant_list = [
     {
         _id: "1",
-        name: "Greek salad",
+        name: "Nhà hàng Phố Cổ",
         image: food_1,
-        price: 12,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Salad"
+        rating: 4.5,
+        description: "Nhà hàng phục vụ các món ăn truyền thống Việt Nam với hương vị đậm đà",
+        address: "123 Phố Cổ, Hoàn Kiếm, Hà Nội",
+        cuisine: "Món Việt"
     },
     {
-        _id: "2",
-        name: "Veg salad",
+        _id: "2", 
+        name: "Quán Bún Chả Hương Liên",
         image: food_2,
-        price: 18,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Salad"
-    }, {
+        rating: 4.8,
+        description: "Nổi tiếng với món bún chả Hà Nội đúng vị, từng được Tổng thống Obama ghé thăm",
+        address: "24 Lê Văn Hưu, Hai Bà Trưng, Hà Nội",
+        cuisine: "Bún Chả"
+    },
+    {
         _id: "3",
-        name: "Clover Salad",
+        name: "Pizza 4P's",
         image: food_3,
-        price: 16,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Salad"
-    }, {
+        rating: 4.6,
+        description: "Chuỗi nhà hàng pizza nổi tiếng với nguyên liệu tươi ngon và phong cách Nhật Bản",
+        address: "8/15 Lê Thánh Tôn, Quận 1, TP.HCM",
+        cuisine: "Pizza Italia"
+    },
+    {
         _id: "4",
-        name: "Chicken Salad",
+        name: "Cơm Tấm Kiều Giang",
         image: food_4,
-        price: 24,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Salad"
-    }, {
+        rating: 4.3,
+        description: "Cơm tấm sườn nướng truyền thống với hương vị đặc trưng miền Nam",
+        address: "60A Nguyễn Du, Quận 1, TP.HCM",
+        cuisine: "Cơm Tấm"
+    },
+    {
         _id: "5",
-        name: "Lasagna Rolls",
+        name: "Phở Hòa Pasteur",
         image: food_5,
-        price: 14,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Rolls"
-    }, {
+        rating: 4.7,
+        description: "Phở bò truyền thống với nước dùng trong vắt và thịt bò tươi ngon",
+        address: "421C Nguyễn Thị Minh Khai, Quận 3, TP.HCM",
+        cuisine: "Phở"
+    },
+    {
         _id: "6",
-        name: "Peri Peri Rolls",
+        name: "Bánh Mì Huỳnh Hoa",
         image: food_6,
-        price: 12,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Rolls"
-    }, {
+        rating: 4.4,
+        description: "Bánh mì thập cẩm nổi tiếng với nhân đầy đặn và bánh giòn rụm",
+        address: "26 Lê Thị Riêng, Quận 1, TP.HCM",
+        cuisine: "Bánh Mì"
+    },
+    {
         _id: "7",
-        name: "Chicken Rolls",
+        name: "Lẩu Thái Lan Bangkok",
         image: food_7,
-        price: 20,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Rolls"
-    }, {
+        rating: 4.2,
+        description: "Lẩu Thái chua cay đậm đà với hải sản tươi sống",
+        address: "156 Võ Văn Tần, Quận 3, TP.HCM",
+        cuisine: "Lẩu Thái"
+    },
+    {
         _id: "8",
-        name: "Veg Rolls",
+        name: "Sushi Hokkaido Sachi",
         image: food_8,
-        price: 15,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Rolls"
-    }, {
-        _id: "9",
-        name: "Ripple Ice Cream",
-        image: food_9,
-        price: 14,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Deserts"
-    }, {
-        _id: "10",
-        name: "Fruit Ice Cream",
-        image: food_10,
-        price: 22,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Deserts"
-    }, {
-        _id: "11",
-        name: "Jar Ice Cream",
-        image: food_11,
-        price: 10,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Deserts"
-    }, {
-        _id: "12",
-        name: "Vanilla Ice Cream",
-        image: food_12,
-        price: 12,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Deserts"
+        rating: 4.9,
+        description: "Sushi Nhật Bản cao cấp với cá tươi được nhập khẩu trực tiếp",
+        address: "72 Hai Bà Trưng, Quận 1, TP.HCM",
+        cuisine: "Sushi Nhật"
     },
-    {
-        _id: "13",
-        name: "Chicken Sandwich",
-        image: food_13,
-        price: 12,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Sandwich"
-    },
-    {
-        _id: "14",
-        name: "Vegan Sandwich",
-        image: food_14,
-        price: 18,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Sandwich"
-    }, {
-        _id: "15",
-        name: "Grilled Sandwich",
-        image: food_15,
-        price: 16,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Sandwich"
-    }, {
-        _id: "16",
-        name: "Bread Sandwich",
-        image: food_16,
-        price: 24,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Sandwich"
-    }, {
-        _id: "17",
-        name: "Cup Cake",
-        image: food_17,
-        price: 14,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Cake"
-    }, {
-        _id: "18",
-        name: "Vegan Cake",
-        image: food_18,
-        price: 12,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Cake"
-    }, {
-        _id: "19",
-        name: "Butterscotch Cake",
-        image: food_19,
-        price: 20,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Cake"
-    }, {
-        _id: "20",
-        name: "Sliced Cake",
-        image: food_20,
-        price: 15,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Cake"
-    }, {
-        _id: "21",
-        name: "Garlic Mushroom ",
-        image: food_21,
-        price: 14,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Pure Veg"
-    }, {
-        _id: "22",
-        name: "Fried Cauliflower",
-        image: food_22,
-        price: 22,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Pure Veg"
-    }, {
-        _id: "23",
-        name: "Mix Veg Pulao",
-        image: food_23,
-        price: 10,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Pure Veg"
-    }, {
-        _id: "24",
-        name: "Rice Zucchini",
-        image: food_24,
-        price: 12,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Pure Veg"
-    },
-    {
-        _id: "25",
-        name: "Cheese Pasta",
-        image: food_25,
-        price: 12,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Pasta"
-    },
-    {
-        _id: "26",
-        name: "Tomato Pasta",
-        image: food_26,
-        price: 18,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Pasta"
-    }, {
-        _id: "27",
-        name: "Creamy Pasta",
-        image: food_27,
-        price: 16,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Pasta"
-    }, {
-        _id: "28",
-        name: "Chicken Pasta",
-        image: food_28,
-        price: 24,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Pasta"
-    }, {
-        _id: "29",
-        name: "Buttter Noodles",
-        image: food_29,
-        price: 14,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Noodles"
-    }, {
-        _id: "30",
-        name: "Veg Noodles",
-        image: food_30,
-        price: 12,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Noodles"
-    }, {
-        _id: "31",
-        name: "Somen Noodles",
-        image: food_31,
-        price: 20,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Noodles"
-    }, {
-        _id: "32",
-        name: "Cooked Noodles",
-        image: food_32,
-        price: 15,
-        description: "Food provides essential nutrients for overall health and well-being",
-        category: "Noodles"
-    }
+
 ]

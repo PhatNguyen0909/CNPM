@@ -7,8 +7,8 @@ const Footer = () => {
     <div className='footer' id='footer'>
       <div className="footer-content">
         <div className="footer-content-left">
-            {/* <img className='img-logo' src={assets.logo}/> */}
-            <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Unde autem sapiente tempore dicta libero animi expedita ipsa odit magnam. Quam minima repellendus eaque voluptatum illo consectetur, sit natus atque veniam?</p>
+            <img className='img-logo' src={assets.logo}/>
+            <p>Potato là nền tảng giao hàng tận nơi hàng đầu Việt Nam, kết nối bạn với hàng nghìn nhà hàng và quán ăn ngon nhất trong thành phố. Chúng tôi cam kết mang đến trải nghiệm ẩm thực tuyệt vời và dịch vụ giao hàng nhanh chóng, tiện lợi.</p>
             <div className="footer-social-icons">
                 <img src={assets.facebook_icon} alt="" />
                 <img src={assets.twitter_icon} alt="" />
@@ -16,16 +16,16 @@ const Footer = () => {
             </div>
         </div>
         <div className="footer-content-center">
-            <h2>COMPANY</h2>
+            <h2>CÔNG TY</h2>
             <ul>
-                <li>Home</li>
-                <li>About Us</li>
-                <li>Delivery</li>
-                <li>Privacy policy</li>
+                <li>Trang chủ</li>
+                <li>Giới thiệu</li>
+                <li>Giao hàng</li>
+                <li>Chính sách bảo mật</li>
             </ul>
         </div>
         <div className="footer-content-right">
-            <h2>GET IN TOUCH</h2>
+            <h2>LIÊN HỆ</h2>
             <ul>
                 <li>+84909997576</li>
                 <li>contact@potato.com</li>
@@ -33,7 +33,7 @@ const Footer = () => {
         </div>
       </div>
       <hr />
-      <p className="footer-copyright">Copyright 2024 potato.com - All Right Reserved.</p>
+      <p className="footer-copyright">Bản quyền © 2025 potato.com - Mọi quyền được bảo lưu.</p>
     </div>
   )
 }
