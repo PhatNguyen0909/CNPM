@@ -1,12 +1,13 @@
 import { createContext } from "react";
-import { restaurant_list } from "../assets/assets";
+import { restaurant_list,food_list } from "../assets/assets";
 
 // Tạo context
 export const StoreContext = createContext(null);
 
 const StoreContextProvider = (props) => {
   const contextValue = {
-    restaurant_list
+    restaurant_list,
+    food_list
   }
 
   return (
