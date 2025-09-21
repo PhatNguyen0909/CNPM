@@ -3,7 +3,7 @@ import './Restaurant.css'
 import { assets } from '../../assets/assets'
 import { useNavigate } from 'react-router-dom'
 
-const Restaurant = ({ id, name, image, description }) => {
+const Restaurant = ({ id, name, image,rating,address,cuisine, description }) => {
   const navigate = useNavigate();  
 
   const handleClick = () => {
@@ -11,17 +11,22 @@ const Restaurant = ({ id, name, image, description }) => {
   }
 
   return (
-    <div className='restaurant-item' onClick={handleClick} >
-      <div className='restaurant-item-img-container'>
-        <img src={image} alt="" className='restaurant-item-image' />
-      </div>
-      <div className='restaurant-info'>
-        <div className='restaurant-item-name-rating'>
-          <p>{name}</p>
-          <img src={assets.rating_starts} alt="" />
+   <div className='restaurant-item' onClick={handleClick}>
+        <div className="restaurant-item-img-container">
+            <img className = 'restaurant-item-image'  src = {image} alt ="" />
         </div>
-        <p className='restaurant-item-des'>{description}</p>
-      </div>
+        <div className='restaurant-item-info'>
+           <div className='restaurant-item-name-rating'>
+              <p>{name}</p>
+              <div className="rating">
+                <img src={assets.rating_starts} alt = ""/>
+                <span>{rating}</span>
+              </div>
+           </div>
+           <p className='restaurant-item-cuisine'>{cuisine}</p>
+           <p className='restaurant-item-desc'>{description}</p>
+           <p className='restaurant-item-address'>{address}</p>
+        </div>
     </div>
   )
 }
