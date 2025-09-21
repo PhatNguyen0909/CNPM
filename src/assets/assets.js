@@ -92,7 +92,7 @@ export const menu_list = [
         menu_image: menu_2
     },
     {
-        menu_name: "Bún-Phở",
+        menu_name: "Bún - Phở",
         menu_image: menu_3
     },
     {
@@ -100,7 +100,7 @@ export const menu_list = [
         menu_image: menu_4
     },
     {
-        menu_name: "Cake",
+        menu_name: "Bánh mì - Xôi",
         menu_image: menu_5
     },
     {
