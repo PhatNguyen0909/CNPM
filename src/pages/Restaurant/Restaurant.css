@@ -6,7 +6,7 @@
     transition: 0.3s;
     animation: fadeIn 1s;
     cursor: pointer;
-    height: 350px;
+    height: auto;
 }
 
 .restaurant-item:hover{
