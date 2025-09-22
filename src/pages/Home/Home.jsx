@@ -6,12 +6,11 @@ import Restaurant from '../../components/RestaurantDisplay/RestaurantDisplay'
 const Home = () => {
 
   const [category,setCategory] = useState("All");
-  const [restaurant,setRestaurant] = useState ("All");
   return (
     <div>
       <Header/>
       <ExploreMenu category={category} setCategory={setCategory}/>
-      <Restaurant restaurant = {restaurant} setRestaurant={setRestaurant}/>
+      <Restaurant selectedCuisine={category}/>
     </div> 
   )
 }
