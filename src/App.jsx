@@ -26,6 +26,7 @@ const App = () => {
         <Route path='/restaurant/:restaurantId' element={<FoodDisplay />} />
       </Routes>
     </div>
+    
     <Footer />
     </>
   )
