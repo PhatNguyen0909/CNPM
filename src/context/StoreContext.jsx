@@ -1,11 +1,14 @@
 import { createContext, useEffect, useState } from "react";
 import { restaurant_list,food_list } from "../assets/assets";
+import { getCookie, setCookie, deleteCookie } from "../utils/cookieUtils";
 
 // Tạo context
 export const StoreContext = createContext(null);
 
 const StoreContextProvider = (props) => {
   const [cartItems,setCartItems] = useState({})
+  const [token, setToken] = useState("")
+
   const addToCart = (itemId) => {
     if(!cartItems[itemId]) {
       setCartItems ((prev)=>({...prev,[itemId]:1}))
@@ -30,6 +33,24 @@ const StoreContextProvider = (props) => {
     return totalAmount;
   }
 
+  useEffect(() => {
+    const storedToken = getCookie("auth_token");
+    if (storedToken) {
+      setToken(storedToken);
+    }
+  }, [])
+
+  // Hàm để set token và lưu vào cookie
+  const setTokenWithCookie = (newToken) => {
+    if (newToken) {
+      setCookie("auth_token", newToken, 7); // Lưu 7 ngày
+      setToken(newToken);
+    } else {
+      deleteCookie("auth_token");
+      setToken("");
+    }
+  }
+
   const contextValue = {
     setCartItems,
     cartItems,
@@ -37,7 +58,9 @@ const StoreContextProvider = (props) => {
     removeFromCart,
     restaurant_list,
     food_list,
-    getTotalCartAmount
+    getTotalCartAmount,
+    token,
+    setToken: setTokenWithCookie
   }
 
   return (
