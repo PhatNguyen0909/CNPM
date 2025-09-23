@@ -5,18 +5,34 @@ import { StoreContext } from '../../context/StoreContext'
 import { formatVND } from '../../utils/formatCurrency'
 const FoodItem = ({id,restaurantId,name,price,description,image}) => {
   const[itemCount,setItemCount] = useState(0)
-  const{cartItems,addToCart,removeFromCart} = useContext(StoreContext);
+  const{cartItems,addToCart,removeFromCart,token} = useContext(StoreContext);
+  
+  const handleAddToCart = () => {
+    if (!token) {
+      alert("Vui lòng đăng nhập để thêm món ăn vào giỏ hàng!");
+      return;
+    }
+    addToCart(id);
+  }
+  
+  const handleRemoveFromCart = () => {
+    if (!token) {
+      alert("Vui lòng đăng nhập để thao tác với giỏ hàng!");
+      return;
+    }
+    removeFromCart(id);
+  }
   return (
     <div className='food-item'>
         <div className="food-item-img-container">
             <img className = 'food-item-image'  src = {image} alt ="" />
             {
               !cartItems[id]
-              ?<img className='add' onClick={()=>addToCart(id)} src={assets.add_icon_white} alt=''/>
+              ?<img className='add' onClick={handleAddToCart} src={assets.add_icon_white} alt=''/>
               :<div className='food-item-counter'>
-                <img onClick={()=>removeFromCart(id)}  src={assets.remove_icon_red} alt=''/>
+                <img onClick={handleRemoveFromCart}  src={assets.remove_icon_red} alt=''/>
                 <p>{cartItems[id]}</p>
-                <img onClick={()=>addToCart(id)}  src={assets.add_icon_green} alt=''/>
+                <img onClick={handleAddToCart}  src={assets.add_icon_green} alt=''/>
               </div>
             }
         </div>

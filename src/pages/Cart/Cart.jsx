@@ -4,7 +4,7 @@ import { StoreContext } from '../../context/StoreContext'
 import { useNavigate } from 'react-router-dom'
 
 const Cart = () => {
-  const{cartItems,food_list,removeFromCart,getTotalCartAmount,token} = useContext(StoreContext);
+  const{cartItems,food_list,removeFromCart,getTotalCartAmount,token,user} = useContext(StoreContext);
   const navigate = useNavigate();
 
   const proceedToCheckout = () => {
@@ -13,6 +13,26 @@ const Cart = () => {
       return;
     }
     navigate('/order');
+  }
+
+  const handleRemoveFromCart = (itemId) => {
+    if (!token) {
+      alert("Vui lòng đăng nhập để thao tác với giỏ hàng!");
+      return;
+    }
+    removeFromCart(itemId);
+  }
+
+  // Nếu chưa đăng nhập, hiển thị thông báo
+  if (!token) {
+    return (
+      <div className='cart'>
+        <div className="cart-empty">
+          <h2>Bạn cần đăng nhập để xem giỏ hàng</h2>
+          <p>Vui lòng đăng nhập để tiếp tục mua sắm.</p>
+        </div>
+      </div>
+    );
   }
   
   return (
@@ -38,7 +58,7 @@ const Cart = () => {
                 <p>{item.price}</p>
                 <p>{cartItems[item._id]}</p>
                 <p>{item.price * cartItems[item._id]}</p>
-                <p onClick={()=>removeFromCart(item._id)} className='cross'>x</p>
+                <p onClick={()=>handleRemoveFromCart(item._id)} className='cross'>x</p>
               </div><hr /></>
             )
           }

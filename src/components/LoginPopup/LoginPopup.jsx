@@ -27,9 +27,14 @@ const LoginPopup = ({setShowLogin}) => {
       // Kiểm tra email và password (demo)
       if (data.email && data.password) {
         const mockToken = "demo_token_" + Date.now();
-        setToken(mockToken); // Sẽ tự động lưu vào cookie
+        const userData = {
+          name: data.name || data.email.split('@')[0], // Lấy tên từ email nếu không có tên
+          email: data.email,
+          id: Date.now()
+        };
+        setToken(mockToken, userData); // Sẽ tự động lưu vào cookie
         setShowLogin(false);
-        alert("Đăng nhập thành công! Token đã được lưu vào cookie.");
+        alert("Đăng nhập thành công! Bạn có thể bắt đầu đặt hàng.");
       } else {
         alert("Vui lòng nhập đầy đủ email và mật khẩu!");
       }
@@ -37,9 +42,14 @@ const LoginPopup = ({setShowLogin}) => {
       // Sign Up
       if (data.name && data.email && data.password) {
         const mockToken = "demo_token_" + Date.now();
-        setToken(mockToken); // Sẽ tự động lưu vào cookie
+        const userData = {
+          name: data.name,
+          email: data.email,
+          id: Date.now()
+        };
+        setToken(mockToken, userData); // Sẽ tự động lưu vào cookie
         setShowLogin(false);
-        alert("Đăng ký thành công! Token đã được lưu vào cookie.");
+        alert("Đăng ký thành công! Bạn có thể bắt đầu đặt hàng.");
       } else {
         alert("Vui lòng điền đầy đủ thông tin!");
       }
