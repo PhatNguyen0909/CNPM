@@ -5,6 +5,7 @@
   margin: 0;
   box-sizing: border-box;
   font-family: 'Montserrat', cursive;
+
 }
 body{
   min-height: 100vh;
@@ -16,6 +17,7 @@ a{
 .app{
   width: 80%;
   margin: auto;
+  margin-bottom: 80px;
 }
 @keyframes fadeIn{
   0%{
