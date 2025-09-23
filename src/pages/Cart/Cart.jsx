@@ -1,19 +1,30 @@
 import React, { useContext } from 'react'
 import './Cart.css'
 import { StoreContext } from '../../context/StoreContext'
+import { useNavigate } from 'react-router-dom'
+
 const Cart = () => {
-  const{cartItems,food_list,removeFromCart,getTotalCartAmount} = useContext(StoreContext);
+  const{cartItems,food_list,removeFromCart,getTotalCartAmount,token} = useContext(StoreContext);
+  const navigate = useNavigate();
+
+  const proceedToCheckout = () => {
+    if (!token) {
+      alert("Vui lòng đăng nhập để tiến hành thanh toán!");
+      return;
+    }
+    navigate('/order');
+  }
   
   return (
     <div className='cart'>
       <div className="cart-items">
         <div className="cart-items-title">
-          <p>Items</p>
-          <p>Title</p>
-          <p>Price</p>
-          <p>Quantity</p>
-          <p>Total</p>
-          <p>Remove</p>
+          <p>Hình ảnh</p>
+          <p>Tên món</p>
+          <p>Giá</p>
+          <p>Số lượng</p>
+          <p>Tổng cộng</p>
+          <p>Xóa</p>
         </div>
         <br />
         <hr />
@@ -36,30 +47,30 @@ const Cart = () => {
       <br />
       <div className='cart-bottom'>
         <div className="cart-total">
-          <h2>Cart Totals</h2>
+          <h2>Tổng thanh toán</h2>
           <div>
             <div className="cart-total-details">
-                <p>Subtotal</p>
+                <p>Tạm tính</p>
                 <p>{getTotalCartAmount()}</p>
             </div>
             <hr />
             <div className="cart-total-details">
-                <p>Delivety</p>
-                <p>{15000}</p>
+                <p>Phí giao hàng</p>
+                <p>{getTotalCartAmount()===0?0:15000}</p>
             </div>
             <hr />
             <div className="cart-total-details">
-              <b>Total</b>
-              <b>{getTotalCartAmount()+15000}</b>
+              <b>Tổng cộng</b>
+              <b>{getTotalCartAmount()===0?0:getTotalCartAmount()+15000}</b>
             </div>
           </div>
-          <button>PROCEED TO CHECKOUT</button>
+          <button onClick={proceedToCheckout}>THANH TOÁN</button>
         </div>
         <div className='cart-promocode'>
-          <p>if you have a promo code,Enter it here</p>
+          <p>Nếu bạn có mã giảm giá, nhập tại đây</p>
           <div className="cart-promocode-input">
-            <input type="text" placeholder='promocode' />
-            <button>Submit</button>
+            <input type="text" placeholder='Mã giảm giá' />
+            <button>Áp dụng</button>
           </div>
         </div>
       </div>
