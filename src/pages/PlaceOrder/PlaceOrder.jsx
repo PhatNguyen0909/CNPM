@@ -2,10 +2,11 @@ import React, { useContext, useState, useEffect } from 'react'
 import './PlaceOrder.css'
 import { StoreContext } from '../../context/StoreContext'
 import { useNavigate } from 'react-router-dom'
+import ProtectedRoute from '../../components/ProtectedRoute/ProtectedRoute'
 
 const PlaceOrder = () => {
 
-  const { getTotalCartAmount, token, food_list, cartItems } = useContext(StoreContext)
+  const { getTotalCartAmount, token, food_list, cartItems, user } = useContext(StoreContext)
   const navigate = useNavigate()
 
   const [data, setData] = useState({
@@ -28,7 +29,17 @@ const PlaceOrder = () => {
       navigate('/cart')
       alert("Giỏ hàng của bạn đang trống!");
     }
-  }, [token])
+    
+    // Tự động điền email từ thông tin user
+    if (user && user.email) {
+      setData(prevData => ({
+        ...prevData,
+        email: user.email,
+        firstName: user.name ? user.name.split(' ')[0] : '',
+        lastName: user.name ? user.name.split(' ').slice(1).join(' ') : ''
+      }));
+    }
+  }, [token, user])
 
   const onChangeHandler = (event) => {
     const name = event.target.name;
@@ -151,4 +162,12 @@ const PlaceOrder = () => {
   )
 }
 
-export default PlaceOrder
+const ProtectedPlaceOrder = () => {
+  return (
+    <ProtectedRoute redirectMessage="Vui lòng đăng nhập để đặt hàng.">
+      <PlaceOrder />
+    </ProtectedRoute>
+  );
+}
+
+export default ProtectedPlaceOrder
