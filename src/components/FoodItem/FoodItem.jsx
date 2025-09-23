@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react'
 import './FoodItem.css'
 import { assets } from '../../assets/assets'
 import { StoreContext } from '../../context/StoreContext'
+import { formatVND } from '../../utils/formatCurrency'
 const FoodItem = ({id,restaurantId,name,price,description,image}) => {
   const[itemCount,setItemCount] = useState(0)
   const{cartItems,addToCart,removeFromCart} = useContext(StoreContext);
@@ -25,7 +26,7 @@ const FoodItem = ({id,restaurantId,name,price,description,image}) => {
               <img src={assets.rating_starts} alt = ""/>
            </div>
            <p className='food-item-desc'>{description}</p>
-           <p className='food-item-price'>${price}</p>
+           <p className='food-item-price'>{formatVND(price)}</p>
         </div>
       
     </div>
