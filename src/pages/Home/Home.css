@@ -1,0 +1,22 @@
+/* Layout cho trang Home với Sidebar */
+.home-page-container { /* container phụ - bỏ padding để thẳng hàng navbar/header (dựa trên .app width:80%) */
+  width: 100%;
+  max-width: 100%;
+  margin: 0; /* không cần auto vì .app đã căn giữa */
+  padding: 0; /* bỏ padding gây thụt vào */
+}
+
+.home-content-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  padding-bottom: 48px; /* chỉ padding dưới, không padding ngang để không lệch */
+}
+.home-main-area {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 900px){
+  .home-page-container { padding: 0; }
+  .home-content-layout { flex-direction: column; gap: 24px; padding-bottom: 36px; }
+}

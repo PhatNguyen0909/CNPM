@@ -189,6 +189,97 @@ export const restaurant_list = [
         address: "72 Hai Bà Trưng, Quận 1, TP.HCM",
         cuisine: "Sushi Nhật"
     },
+    // Thêm mới
+    {
+        _id: "9",
+        name: "Trà Sữa Gong Cha",
+        image: food_9,
+        rating: 4.1,
+        description: "Chuỗi trà sữa Đài Loan với nhiều lựa chọn topping phong phú",
+        address: "45 Nguyễn Huệ, Quận 1, TP.HCM",
+        cuisine: "Trà Sữa"
+    },
+    {
+        _id: "10",
+        name: "Highlands Coffee",
+        image: food_10,
+        rating: 4.0,
+        description: "Cà phê phin và đồ uống hiện đại trong không gian thân thiện",
+        address: "101 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội",
+        cuisine: "Cà Phê"
+    },
+    {
+        _id: "11",
+        name: "Bánh Mì Minh Nhật",
+        image: food_11,
+        rating: 4.3,
+        description: "Bánh mì Việt Nam với nhân đa dạng và nước sốt đặc trưng",
+        address: "12 Hàng Bạc, Hoàn Kiếm, Hà Nội",
+        cuisine: "Bánh Mì"
+    },
+    {
+        _id: "12",
+        name: "Xôi Yến",
+        image: food_12,
+        rating: 4.4,
+        description: "Quán xôi nổi tiếng với xôi xéo, pate và hành phi thơm giòn",
+        address: "35B Nguyễn Hữu Huân, Hoàn Kiếm, Hà Nội",
+        cuisine: "Xôi"
+    },
+    {
+        _id: "13",
+        name: "Cà Phê Phúc Long",
+        image: food_13,
+        rating: 4.2,
+        description: "Trà và cà phê đậm vị, nổi bật với trà sữa và bánh ngọt kèm",
+        address: "2A Tôn Đức Thắng, Quận 1, TP.HCM",
+        cuisine: "Cà Phê"
+    },
+    {
+        _id: "14",
+        name: "The Coffee House",
+        image: food_14,
+        rating: 4.5,
+        description: "Không gian hiện đại, đồ uống đa dạng từ cà phê đến trà trái cây",
+        address: "86 Đồng Khởi, Quận 1, TP.HCM",
+        cuisine: "Cà Phê"
+    },
+    {
+        _id: "15",
+        name: "Trà Sữa Phúc Tea",
+        image: food_15,
+        rating: 3.9,
+        description: "Trà sữa vị thanh, trân châu mềm dai nấu trong ngày",
+        address: "189 Nguyễn Trãi, Quận 5, TP.HCM",
+        cuisine: "Trà Sữa"
+    },
+    {
+        _id: "16",
+        name: "Lẩu Hồ Quang",
+        image: food_16,
+        rating: 4.1,
+        description: "Lẩu nước dùng đậm đà với hải sản và thịt bò tươi",
+        address: "58 Trường Sa, Bình Thạnh, TP.HCM",
+        cuisine: "Lẩu Thái"
+    },
+    {
+        _id: "17",
+        name: "Cơm Gà Hội An",
+        image: food_17,
+        rating: 4.6,
+        description: "Cơm gà xé Hội An chuẩn vị kèm nước mắm tỏi ớt đặc biệt",
+        address: "20 Nguyễn Văn Thủ, Quận 1, TP.HCM",
+        cuisine: "Cơm"
+    },
+    {
+        _id: "18",
+        name: "Dessert Corner",
+        image: food_18,
+        rating: 4.3,
+        description: "Quán tráng miệng với bánh ngọt Âu - Á và thức uống nhẹ",
+        address: "14 Thảo Điền, TP. Thủ Đức, TP.HCM",
+        cuisine: "Tráng Miệng"
+    },
 
 ]
 export const food_list = [
