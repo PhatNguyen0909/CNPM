@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react'
 import './LoginPopup.css'
 import { assets } from '../../assets/assets'
 import { StoreContext } from '../../context/StoreContext'
+import api, { attachToken } from '../../services/apiClient'
 
 const LoginPopup = ({setShowLogin}) => {
 
@@ -21,38 +22,58 @@ const LoginPopup = ({setShowLogin}) => {
 
   const onLogin = async (event) => {
     event.preventDefault();
-    
-    // Giả lập login thành công (trong thực tế sẽ gọi API)
-    if (currState === "Login") {
-      // Kiểm tra email và password (demo)
-      if (data.email && data.password) {
-        const mockToken = "demo_token_" + Date.now();
-        const userData = {
-          name: data.name || data.email.split('@')[0], // Lấy tên từ email nếu không có tên
+    try {
+      if (currState === 'Login') {
+        // Gọi API login (giả sử backend đường dẫn /auth/login )
+        const res = await api.post('/auth/login', {
           email: data.email,
-          id: Date.now()
-        };
-        setToken(mockToken, userData); // Sẽ tự động lưu vào cookie
-        setShowLogin(false);
-        alert("Đăng nhập thành công! Bạn có thể bắt đầu đặt hàng.");
-      } else {
-        alert("Vui lòng nhập đầy đủ email và mật khẩu!");
-      }
-    } else {
-      // Sign Up
-      if (data.name && data.email && data.password) {
-        const mockToken = "demo_token_" + Date.now();
+          password: data.password
+        });
+
+        /*
+          Dựa vào hình swagger bạn gửi ở signup:
+          {
+            "statusCode": 1000,
+            "data": { "fullName": "Hieu", "email": "...", "token": "JWT..." },
+            "message": "..."
+          }
+          Ta suy đoán login trả về cấu trúc tương tự => dùng data.data.token
+        */
+        const payload = res.data?.data || {};
+        const token = payload.token;
+        if (!token) throw new Error('Không tìm thấy token trong phản hồi');
         const userData = {
-          name: data.name,
-          email: data.email,
-          id: Date.now()
+          name: payload.fullName || data.email.split('@')[0],
+          email: payload.email || data.email
         };
-        setToken(mockToken, userData); // Sẽ tự động lưu vào cookie
+        setToken(token, userData);
+        attachToken(token);
         setShowLogin(false);
-        alert("Đăng ký thành công! Bạn có thể bắt đầu đặt hàng.");
+        alert('Đăng nhập thành công!');
       } else {
-        alert("Vui lòng điền đầy đủ thông tin!");
+        // Sign Up -> /auth/signup
+        const res = await api.post('/auth/signup', {
+          fullName: data.name,
+          email: data.email,
+          password: data.password
+        });
+        const payload = res.data?.data || {};
+        const token = payload.token; // Backend đang trả token ngay khi signup
+        const userData = {
+          name: payload.fullName || data.name,
+          email: payload.email || data.email
+        };
+        if (token) {
+          setToken(token, userData);
+          attachToken(token);
+        }
+        setShowLogin(false);
+        alert('Đăng ký thành công!');
       }
+    } catch (err) {
+      console.error('Auth error:', err);
+      const msg = err.response?.data?.message || err.message || 'Có lỗi xảy ra';
+      alert('Lỗi: ' + msg);
     }
   }
 
@@ -68,7 +89,9 @@ const LoginPopup = ({setShowLogin}) => {
           <input name='email' onChange={onChangeHandler} value={data.email} type="email" placeholder='Email của bạn' required />
           <input name='password' onChange={onChangeHandler} value={data.password} type="password" placeholder='Mật khẩu' required />
         </div>
-        <button type="submit">{currState==="Sign Up"?"Tạo tài khoản":"Đăng nhập"}</button>
+        <button type="submit" disabled={!data.email || !data.password || (currState==='Sign Up' && !data.name)}>
+          {currState==="Sign Up"?"Tạo tài khoản":"Đăng nhập"}
+        </button>
         <div className="login-popup-condition">
           <input type="checkbox" required />
           <p>Tôi đồng ý với điều khoản sử dụng và chính sách bảo mật</p>
