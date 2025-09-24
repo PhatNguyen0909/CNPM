@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react'
 import './LoginPopup.css'
 import { assets } from '../../assets/assets'
 import { StoreContext } from '../../context/StoreContext'
-import api, { attachToken } from '../../services/apiClient'
+import userAPI from '../../services/userAPI'
 
 const LoginPopup = ({setShowLogin}) => {
 
@@ -23,59 +23,34 @@ const LoginPopup = ({setShowLogin}) => {
   const onLogin = async (event) => {
     event.preventDefault();
     try {
+      let payload;
       if (currState === 'Login') {
         // Gọi API login (giả sử backend đường dẫn /auth/login )
-        const res = await api.post('/auth/login', {
-          email: data.email,
-          password: data.password
+        payload = await userAPI.login({
+          email:data.email,
+          password:data.password,
         });
-
-        /*
-          Dựa vào hình swagger bạn gửi ở signup:
-          {
-            "statusCode": 1000,
-            "data": { "fullName": "Hieu", "email": "...", "token": "JWT..." },
-            "message": "..."
-          }
-          Ta suy đoán login trả về cấu trúc tương tự => dùng data.data.token
-        */
-        const payload = res.data?.data || {};
-        const token = payload.token;
-        if (!token) throw new Error('Không tìm thấy token trong phản hồi');
-        const userData = {
-          name: payload.fullName || data.email.split('@')[0],
-          email: payload.email || data.email
-        };
-        setToken(token, userData);
-        attachToken(token);
-        setShowLogin(false);
-        alert('Đăng nhập thành công!');
-      } else {
-        // Sign Up -> /auth/signup
-        const res = await api.post('/auth/signup', {
+        }
+        else{
+          payload = await userAPI.register({
           fullName: data.name,
           email: data.email,
-          password: data.password
+          password: data.password,
         });
-        const payload = res.data?.data || {};
-        const token = payload.token; // Backend đang trả token ngay khi signup
-        const userData = {
-          name: payload.fullName || data.name,
-          email: payload.email || data.email
-        };
-        if (token) {
-          setToken(token, userData);
-          attachToken(token);
         }
+        if(!payload?.token) throw new Error("Không tìm thấy token");
+        setToken(payload.token,{
+          name: payload.fullName || data.name || data.email.split("@")[0],
+          email: payload.email || data.email,
+        });
         setShowLogin(false);
-        alert('Đăng ký thành công!');
-      }
-    } catch (err) {
-      console.error('Auth error:', err);
-      const msg = err.response?.data?.message || err.message || 'Có lỗi xảy ra';
-      alert('Lỗi: ' + msg);
-    }
+        alert(`${currState === "Login" ? "Đăng nhập" : "Đăng ký"} thành công!`);
+  }catch(err){
+    console.error("Auth error:", err);
+      const msg = err.response?.data?.message || err.message || "Có lỗi xảy ra";
+      alert("Lỗi: " + msg);
   }
+};
 
   return (
     <div className ='login-popup'>
