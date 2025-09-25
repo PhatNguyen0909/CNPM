@@ -68,5 +68,6 @@
     }
     .header-contents button{
         padding: 2vw 4vw;
+        margin-top: -4.5vw;
     }
 }

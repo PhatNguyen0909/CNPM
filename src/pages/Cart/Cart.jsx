@@ -2,9 +2,10 @@ import React, { useContext } from 'react'
 import './Cart.css'
 import { StoreContext } from '../../context/StoreContext'
 import { useNavigate } from 'react-router-dom'
+import { formatVND } from '../../utils/formatCurrency'
 
 const Cart = () => {
-  const{cartItems,food_list,removeFromCart,getTotalCartAmount,token,user} = useContext(StoreContext);
+  const{cartItems,cartLines,food_list,removeFromCart,removeCartLine,updateCartLineQty,getTotalCartAmount,token,user} = useContext(StoreContext);
   const navigate = useNavigate();
 
   const proceedToCheckout = () => {
@@ -55,14 +56,44 @@ const Cart = () => {
             <><div className='cart-items-title cart-items-item'>
                 <img src={item.image} alt="" />
                 <p>{item.name}</p>
-                <p>{item.price}</p>
+                <p>{formatVND(item.price)}</p>
                 <p>{cartItems[item._id]}</p>
-                <p>{item.price * cartItems[item._id]}</p>
+                <p>{formatVND(item.price * cartItems[item._id])}</p>
                 <p onClick={()=>handleRemoveFromCart(item._id)} className='cross'>x</p>
               </div><hr /></>
             )
           }
         })}
+
+        {cartLines.map(line => (
+          <>
+            <div key={line.key} className='cart-items-title cart-items-item'>
+              <img src={line.image} alt="" />
+              <p>
+                {line.name}
+                {line.selections && (
+                  <span style={{display:'block', color:'#6b7280', fontSize:12}}>
+                    {Object.entries(line.selections).map(([g, vals]) => `${g}: ${vals.join(', ')}`).join(' • ')}
+                  </span>
+                )}
+                {line.note && (
+                  <span style={{display:'block', color:'#4b5563', fontSize:12, marginTop:4, fontWeight:'bold'}}>
+                    Ghi chú: {line.note}
+                  </span>
+                )}
+              </p>
+              <p>{formatVND(Number(line.basePrice) + Number(line.optionsPrice||0))}</p>
+              <p>
+                <span style={{marginRight:8}} onClick={() => updateCartLineQty(line.key, line.quantity - 1)}>-</span>
+                {line.quantity}
+                <span style={{marginLeft:8}} onClick={() => updateCartLineQty(line.key, line.quantity + 1)}>+</span>
+              </p>
+              <p>{formatVND((Number(line.basePrice)+Number(line.optionsPrice||0))*Number(line.quantity))}</p>
+              <p onClick={()=>removeCartLine(line.key)} className='cross'>x</p>
+            </div>
+            <hr />
+          </>
+        ))}
       </div>
       <br />
       <div className='cart-bottom'>
@@ -71,17 +102,17 @@ const Cart = () => {
           <div>
             <div className="cart-total-details">
                 <p>Tạm tính</p>
-                <p>{getTotalCartAmount()}</p>
+                <p>{formatVND(getTotalCartAmount())}</p>
             </div>
             <hr />
             <div className="cart-total-details">
                 <p>Phí giao hàng</p>
-                <p>{getTotalCartAmount()===0?0:15000}</p>
+                <p>{getTotalCartAmount()===0?formatVND(0):formatVND(15000)}</p>
             </div>
             <hr />
             <div className="cart-total-details">
               <b>Tổng cộng</b>
-              <b>{getTotalCartAmount()===0?0:getTotalCartAmount()+15000}</b>
+              <b>{getTotalCartAmount()===0?formatVND(0):formatVND(getTotalCartAmount()+15000)}</b>
             </div>
           </div>
           <button onClick={proceedToCheckout}>THANH TOÁN</button>

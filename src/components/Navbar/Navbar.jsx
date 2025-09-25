@@ -8,7 +8,7 @@ const Navbar = ({setShowLogin}) => {
 
   const[menu, setMenu] = useState("home");
   const[showDropdown, setShowDropdown] = useState(false);
-  const{getTotalCartAmount, token, user, logout} = useContext(StoreContext);
+  const{getTotalCartAmount, token, user, logout, mockLogin} = useContext(StoreContext);
   const timeoutRef = useRef(null);
 
   const handleMouseEnter = () => {
@@ -30,7 +30,7 @@ const Navbar = ({setShowLogin}) => {
         <Link to = '/' onClick={()=> setMenu("home")} className={menu ==="home"?"active":""}>Trang chủ</Link>
         <a href="" onClick={()=> setMenu("menu")} className={menu ==="menu"?"active":""}>Khám phá món ăn</a>
         <a href="" onClick={()=> setMenu("mobile-app")} className={menu ==="mobile-app"?"active":""}>Mobile App</a>
-        <a href="" onClick={()=> setMenu("contact-us")} className={menu ==="contact-us"?"active":""}>Liên hệ chúng tôi</a>
+        <a href="#footer" onClick={()=> setMenu("contact-us")} className={menu ==="contact-us"?"active":""}>Liên hệ chúng tôi</a>
       </ul>
       <div className="navbar-right">
         <img src ={assets.search_icon} alt= " "/>
@@ -40,7 +40,13 @@ const Navbar = ({setShowLogin}) => {
             </div>
         </div>
         {!token ? (
-          <button onClick={()=>setShowLogin(true)}>Đăng nhập</button>
+          <>
+            <button onClick={()=>setShowLogin(true)}>Đăng nhập</button>
+            <button style={{backgroundColor:'#6b7280'}} onClick={()=>{
+              try{ localStorage.setItem('mock_login','1'); }catch(e){}
+              mockLogin();
+            }}>Đăng nhập tài khoản admin</button>
+          </>
         ) : (
           <div 
             className='navbar-profile'

@@ -1,12 +1,16 @@
 import { createContext, useEffect, useState } from "react";
 import { restaurant_list,food_list } from "../assets/assets";
+import { item_options } from "../assets/itemOptions";
 import { getCookie, setCookie, deleteCookie } from "../utils/cookieUtils";
 
 // Tạo context
 export const StoreContext = createContext(null);
 
 const StoreContextProvider = (props) => {
+  // Legacy simple cart (itemId -> quantity)
   const [cartItems,setCartItems] = useState({})
+  // New cart lines to support options per item
+  const [cartLines, setCartLines] = useState([]);
   const [token, setToken] = useState("")
   const [user, setUser] = useState(null)
 
@@ -33,13 +37,94 @@ const StoreContextProvider = (props) => {
      setCartItems ((prev)=>({...prev,[itemId]:prev[itemId]-1}))
   }
 
+  // Helper: build a stable key for a line based on item and selections
+  const generateLineKey = (itemId, selectionsObj, note='') => {
+    // selectionsObj: { [groupTitle]: string[] }
+    const parts = [itemId];
+    const groups = Object.keys(selectionsObj || {}).sort();
+    groups.forEach(g => {
+      const values = [...(selectionsObj[g] || [])].sort();
+      parts.push(`${g}=${values.join(',')}`);
+    });
+    if (note) parts.push(`note=${note}`);
+    return parts.join('|');
+  };
+
+  // Compute options price from item definition and selections
+  const computeOptionsPrice = (item, selectionsObj) => {
+    const groups = item_options?.[item?._id] || [];
+    if (!Array.isArray(groups) || groups.length === 0) return 0;
+    let extra = 0;
+    groups.forEach(group => {
+      const chosen = selectionsObj?.[group.title] || [];
+      chosen.forEach(label => {
+        const opt = group.options.find(o => o.label === label);
+        if (opt) extra += Number(opt.priceDelta || 0);
+      });
+    });
+    return extra;
+  };
+
+  // Add item with options into cartLines
+  const addToCartWithOptions = (itemId, selectionsObj, quantity = 1, note = '') => {
+    if (!token) {
+      alert("Vui lòng đăng nhập để thêm món ăn vào giỏ hàng!");
+      return;
+    }
+    const item = food_list.find(f => f._id === itemId);
+    if (!item) return;
+    const key = generateLineKey(itemId, selectionsObj, note);
+    const optionsPrice = computeOptionsPrice(item, selectionsObj);
+
+    setCartLines(prev => {
+      const idx = prev.findIndex(l => l.key === key);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], quantity: copy[idx].quantity + quantity };
+        return copy;
+      }
+      return [
+        ...prev,
+        {
+          key,
+          itemId,
+          name: item.name,
+          image: item.image,
+          basePrice: item.price,
+          selections: selectionsObj, // { groupTitle: string[] }
+          optionsPrice,
+          note,
+          quantity
+        }
+      ];
+    });
+  };
+
+  const updateCartLineQty = (key, newQty) => {
+    setCartLines(prev => {
+      if (newQty <= 0) return prev.filter(l => l.key !== key);
+      return prev.map(l => (l.key === key ? { ...l, quantity: newQty } : l));
+    });
+  };
+
+  const removeCartLine = (key) => {
+    setCartLines(prev => prev.filter(l => l.key !== key));
+  };
+
   const getTotalCartAmount = () =>{
     let totalAmount = 0;
+    // legacy items
     for(const item in cartItems){
       if(cartItems[item] > 0){
         let itemInfo = food_list.find((product)=>product._id === item);
-        totalAmount += itemInfo.price *cartItems[item];
+        if (itemInfo) {
+          totalAmount += itemInfo.price * cartItems[item];
+        }
       }
+    }
+    // configurable lines
+    for (const line of cartLines) {
+      totalAmount += (Number(line.basePrice) + Number(line.optionsPrice || 0)) * Number(line.quantity || 0);
     }
     return totalAmount;
   }
@@ -76,6 +161,29 @@ const StoreContextProvider = (props) => {
     return () => clearInterval(checkTokenExpiry);
   }, [token])
 
+  // Mock login for offline testing (when backend off)
+  const mockLogin = () => {
+    const fakeUser = {
+      id: 'mock-user-1',
+      name: 'Khách thử nghiệm',
+      email: 'mock@example.com'
+    };
+    setTokenWithCookie('mock-token', fakeUser);
+    alert('Đã kích hoạt đăng nhập thử (mock).');
+  };
+
+  // Auto enable mock by query param or localStorage flag
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const qp = url.searchParams.get('mock');
+      const ls = localStorage.getItem('mock_login');
+      if ((qp === '1' || ls === '1') && !token) {
+        mockLogin();
+      }
+    } catch (e) { /* noop */ }
+  }, []);
+
   // Hàm để set token và lưu vào cookie
   const setTokenWithCookie = (newToken, userData = null) => {
     if (newToken) {
@@ -92,6 +200,7 @@ const StoreContextProvider = (props) => {
       setToken("");
       setUser(null);
       setCartItems({}); // Xóa giỏ hàng khi đăng xuất
+      setCartLines([]);
     }
   }
 
@@ -109,8 +218,12 @@ const StoreContextProvider = (props) => {
   const contextValue = {
     setCartItems,
     cartItems,
+    cartLines,
     addToCart,
     removeFromCart,
+    addToCartWithOptions,
+    updateCartLineQty,
+    removeCartLine,
     restaurant_list,
     food_list,
     getTotalCartAmount,
@@ -119,6 +232,7 @@ const StoreContextProvider = (props) => {
     setToken: setTokenWithCookie,
     isLoggedIn,
     logout
+    ,mockLogin
   }
 
   return (
