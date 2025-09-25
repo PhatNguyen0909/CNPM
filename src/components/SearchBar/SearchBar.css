@@ -1,0 +1,29 @@
+.searchbar { position: relative; width: 420px; max-width: 48vw; }
+.searchbar-input { display:flex; align-items:center; border:1px solid #e5e7eb; border-radius:14px; padding: 8px 10px; background:#fff; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+.searchbar-input.active { box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-color:#d1d5db; }
+.searchbar-input input { flex:1; border:none; outline:none; font-size:14px; color:#374151; }
+.searchbar-icon { width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:none; background:transparent; border-radius:50%; cursor:pointer; }
+.searchbar-icon:hover { background:#f3f4f6; }
+.searchbar-icon img{ width:18px; height:18px; opacity:0.8; }
+
+.searchbar-panel { position:absolute; top:52px; left:0; right:0; background:#fff; border:1px solid #e5e7eb; border-radius:16px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 12px 12px 8px; z-index:30; }
+.divider { height:1px; background:#e5e7eb; margin:8px 0; }
+.panel-section { padding: 4px 4px 8px; }
+.panel-title { font-size:13px; font-weight:600; color:#6b7280; margin-bottom:8px; }
+.panel-title.row { display:flex; align-items:center; justify-content:space-between; }
+.chip-wrap { display:flex; flex-wrap:wrap; gap:10px; }
+.chip { border:1px solid #d1d5db; border-radius:12px; padding:6px 10px; background:#fff; font-size:13px; color:#374151; cursor:pointer; }
+.chip:hover { background:#f9fafb; }
+
+.history-list { list-style:none; margin:0; padding:0; max-height:180px; overflow:auto; }
+.history-list li { display:flex; align-items:center; justify-content:space-between; padding:6px 4px; }
+.history-list .empty { color:#9ca3af; font-style:italic; }
+.history-term { background:none; border:none; color:#374151; font-size:14px; cursor:pointer; text-align:left; }
+.history-term:hover { text-decoration:underline; }
+.history-remove { background:none; border:none; color:#9ca3af; font-size:18px; cursor:pointer; padding:0 6px; }
+.history-remove:hover { color:#6b7280; }
+.clear-link { background:none; border:none; color:#374151; text-decoration:underline; font-size:13px; cursor:pointer; }
+
+@media (max-width: 768px){
+  .searchbar { width: 100%; max-width: none; }
+}
