@@ -1,6 +1,7 @@
 import React, { useContext, useState, useRef } from 'react'
 import './Navbar.css'
 import { assets } from '../../assets/assets'
+import SearchBar from '../SearchBar/SearchBar'
 import { Link } from 'react-router-dom';
 import { StoreContext } from '../../context/StoreContext';
 
@@ -27,10 +28,7 @@ const Navbar = ({setShowLogin}) => {
     <div className = 'navbar'>
       <Link to = '/'><img src = {assets.logo} alt = " " className="logo"/></Link>
       <ul className="navbar-menu">
-        <Link to = '/' onClick={()=> setMenu("home")} className={menu ==="home"?"active":""}>Trang chủ</Link>
-        <a href="" onClick={()=> setMenu("menu")} className={menu ==="menu"?"active":""}>Khám phá món ăn</a>
-        <a href="" onClick={()=> setMenu("mobile-app")} className={menu ==="mobile-app"?"active":""}>Mobile App</a>
-        <a href="#footer" onClick={()=> setMenu("contact-us")} className={menu ==="contact-us"?"active":""}>Liên hệ chúng tôi</a>
+        <li className="navbar-search-wrap"><SearchBar /></li>
       </ul>
       <div className="navbar-right">
         <img src ={assets.search_icon} alt= " "/>
