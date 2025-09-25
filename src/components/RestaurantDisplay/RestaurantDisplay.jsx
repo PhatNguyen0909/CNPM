@@ -53,18 +53,10 @@ const RestaurantDisplay = ({ selectedCuisine, ratingFilter = 0, sortBy = 'highes
     )
   }
 
-  // 2. Lọc danh sách món theo category
-  const filteredFoods = food_list.filter((food) =>
-    food.category?.toLowerCase().includes(selectedCuisine.toLowerCase())
-  )
-
-  // 3. Lấy ra danh sách id nhà hàng từ món ăn
-  const restaurantIds = [...new Set(filteredFoods.map((food) => food.restaurantId))]
-
-  // 4. Lọc danh sách nhà hàng
+  // Lọc trực tiếp theo cuisine của nhà hàng (thay vì theo food_list.category)
   const filteredRestaurants = sortRestaurants(
     restaurant_list
-      .filter((res) => restaurantIds.includes(res._id))
+      .filter((res) => res.cuisine?.toLowerCase().includes(selectedCuisine.toLowerCase()))
       .filter(byRating)
   )
 
