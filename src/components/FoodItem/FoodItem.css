@@ -59,3 +59,21 @@
     border-radius: 50px;
     background-color: white;
 }
+
+/* Featured/Large variant */
+.food-item.featured {
+    box-shadow: 0px 6px 24px rgba(0,0,0,0.08);
+}
+.food-item.featured .food-item-image{
+    height: 260px;
+    object-fit: cover;
+}
+.food-item.featured .food-item-img-container{
+    height: auto;
+}
+.food-item.featured .food-item-name-rating p{
+    font-size: 22px;
+}
+.food-item.featured .food-item-price{
+    font-size: 24px;
+}

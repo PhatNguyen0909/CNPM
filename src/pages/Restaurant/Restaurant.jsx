@@ -23,7 +23,7 @@ const Restaurant = ({ id, name, image,rating,address,cuisine, description }) => 
                 <span>{rating}</span>
               </div>
            </div>
-           <p className='restaurant-item-cuisine'>{cuisine}</p>
+           <p className='restaurant-item-cuisine'>{Array.isArray(cuisine) ? cuisine.join(', ') : cuisine}</p>
            <p className='restaurant-item-desc'>{description}</p>
            <p className='restaurant-item-address'>{address}</p>
         </div>

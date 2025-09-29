@@ -6,10 +6,72 @@
     font-size: max(2vw,24px);
     font-weight: 600;
 }
+.section-title{ font-size: 22px; font-weight:700; margin: 18px 0 10px; }
 .food-display-list{
     display: grid;
     grid-template-columns: repeat(auto-fill,minmax(240px,1fr));
     margin-top: 30px;
     gap: 30px;
     row-gap: 50px;
+}
+
+/* Category bar */
+.menu-cat-bar{ position:sticky; top:0; background:#fff; z-index:10; padding:10px 0; border-bottom:1px solid #f3f4f6; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.menu-cat-bar .chips{ display:flex; gap:12px; flex:1; flex-wrap:nowrap; overflow:auto; padding-bottom:0; scrollbar-width:none; }
+.menu-cat-bar .chips::-webkit-scrollbar{ display:none; }
+.cat-chip{ border:1px solid #e5e7eb; background:#fff; color:#111827; padding:8px 12px; border-radius:9999px; cursor:pointer; white-space:nowrap; font-weight:600; }
+.cat-chip:hover{ background:#f9fafb; }
+.cat-chip.active{ background:#111827; color:#fff; border-color:#111827; position:relative; }
+.cat-chip.active::after{ content:"✓"; font-size:12px; margin-left:8px; display:inline-block; }
+
+.cat-more{ flex:0 0 auto; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; border-radius:9999px; background:#fff; cursor:pointer; }
+.cat-more:hover{ background:#f9fafb; }
+.cat-more img{ width:16px; height:16px; opacity:0.7; display:block; }
+
+.cat-dropdown{ position:absolute; right:0; top:100%; margin-top:8px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.08); padding:8px; display:flex; flex-direction:column; gap:4px; max-height:50vh; overflow:auto; }
+.cat-dd-item{ text-align:left; border:none; background:#fff; color:#111827; padding:8px 10px; border-radius:8px; cursor:pointer; white-space:nowrap; }
+.cat-dd-item:hover{ background:#f9fafb; }
+.cat-dd-item.active{ background:#111827; color:#fff; }
+
+.menu-section{ margin-bottom: 24px; }
+
+/* Featured carousel */
+.featured-row{ display:flex; align-items:center; gap:12px; }
+.featured-scroller{ flex:1; overflow-x:auto; overflow-y:hidden; scroll-behavior:smooth; display:flex; gap:20px; padding: 6px 4px; scroll-snap-type:x mandatory; }
+.featured-scroller::-webkit-scrollbar{ display:none; }
+.featured-scroller{ -ms-overflow-style:none; scrollbar-width:none; }
+.featured-card{ scroll-snap-align:start; flex: 0 0 calc((100% - 40px) / 3); }
+.carousel-arrow{ flex:0 0 36px; width:36px; height:36px; border:1px solid #e5e7eb; border-radius:9999px; background:#fff; color:#111827; cursor:pointer; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+.carousel-arrow:hover{ background:#f9fafb; }
+
+@media (max-width: 900px){
+    .featured-card{ flex: 0 0 calc((100% - 20px) / 2); }
+}
+@media (max-width: 600px){
+    .featured-card{ flex: 0 0 90%; }
+}
+
+/* Restaurant header */
+.restaurant-header{ display:flex; gap:24px; align-items:flex-start; margin-bottom:24px; }
+.rh-left{ flex:0 0 360px; }
+.rh-image{ width:100%; height:220px; object-fit:cover; border-radius:12px; }
+.rh-right{ flex:1; min-width:0; }
+.rh-top-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.rh-name{ font-size:32px; line-height:1.2; margin:0; font-weight:700; }
+.rh-fav-btn{ border:1px solid #f59e0b; color:#f59e0b; background:#fff; padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:600; }
+.rh-fav-btn:hover{ background:#fff7ed; }
+.rh-meta{ margin-top:6px; color:#6b7280; display:flex; align-items:center; gap:8px; font-size:14px; }
+.rh-rating{ color:#f59e0b; font-weight:600; }
+.rh-sep{ color:#9ca3af; }
+.rh-link{ color:#6b7280; text-decoration:underline; }
+.rh-open{ color:#6b7280; }
+.rh-address{ margin-top:8px; color:#374151; }
+.rh-tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.rh-tag{ color:#6b7280; font-size:14px; }
+
+@media (max-width: 900px){
+    .restaurant-header{ flex-direction:column; }
+    .rh-left{ width:100%; flex:0 0 auto; }
+    .rh-image{ height:180px; }
+    .rh-name{ font-size:26px; }
 }
