@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import Navbar from './components/Navbar/Navbar'
+import ScrollToTop from './components/ScrollToTop'
 import { Route, Routes } from 'react-router-dom'
 import Home from './pages/Home/Home'
 import Cart from './pages/Cart/Cart'
@@ -17,7 +18,8 @@ const App = () => {
   return (
     <>
     {showLogin?<LoginPopup setShowLogin={setShowLogin}/>:<></>}
-     <div className ='app'>
+  <div className ='app'>
+   <ScrollToTop />
       <Navbar setShowLogin={setShowLogin} />
       <Routes>
         <Route path = '/' element ={<Home/>}/>
