@@ -5,7 +5,7 @@ import { StoreContext } from '../../context/StoreContext'
 import { formatVND } from '../../utils/formatCurrency'
 import FoodOptionsModal from '../FoodOptionsModal/FoodOptionsModal'
 import { item_options } from '../../assets/itemOptions'
-const FoodItem = ({id,restaurantId,name,price,description,image}) => {
+const FoodItem = ({id,restaurantId,name,price,description,image, variant}) => {
   const[itemCount,setItemCount] = useState(0)
   const{cartItems,addToCart,removeFromCart,addToCartWithOptions,food_list,token} = useContext(StoreContext);
   const [open, setOpen] = useState(false);
@@ -34,7 +34,7 @@ const FoodItem = ({id,restaurantId,name,price,description,image}) => {
     removeFromCart(id);
   }
   return (
-    <div className='food-item'>
+    <div className={`food-item ${variant ? variant : ''}`}>
         <div className="food-item-img-container">
             <img className = 'food-item-image'  src = {image} alt ="" />
             {

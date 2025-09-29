@@ -19,3 +19,10 @@
     gap: 30px;
     row-gap: 50px;
 }
+
+.restaurant-pagination{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:24px; }
+.restaurant-pagination .page-list{ display:flex; align-items:center; gap:8px; list-style:none; padding:0; margin:0; }
+.restaurant-pagination .page-btn{ border:1px solid #e5e7eb; background:#fff; color:#374151; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:14px; }
+.restaurant-pagination .page-btn:hover{ background:#f9fafb; }
+.restaurant-pagination .page-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+.restaurant-pagination .page-btn.number.active{ background:#111827; color:#fff; border-color:#111827; }

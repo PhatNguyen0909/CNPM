@@ -54,6 +54,7 @@ import facebook_icon from './facebook_icon.png'
 import twitter_icon from './twitter_icon.png'
 import cross_icon from './cross_icon.png'
 import selector_icon from './selector_icon.png'
+import detail_icon from './detail_icon.png'
 import rating_starts from './rating_starts.png'
 import profile_icon from './profile_icon.png'
 import bag_icon from './bag_icon.png'
@@ -76,6 +77,7 @@ export const assets = {
     twitter_icon,
     cross_icon,
     selector_icon,
+    detail_icon,
     profile_icon,
     logout_icon,
     bag_icon,
@@ -321,5 +323,27 @@ export const food_list = [
   { _id: "29", restaurantId: "8", name: "Butter Noodles", image: food_29, price: 14000, description: "Food provides essential nutrients...", category: "Cơm" },
   { _id: "30", restaurantId: "8", name: "Veg Noodles", image: food_30, price: 12000, description: "Food provides essential nutrients...", category: "Cơm" },
   { _id: "31", restaurantId: "8", name: "Somen Noodles", image: food_31, price: 20000, description: "Food provides essential nutrients...", category: "Cơm" },
-  { _id: "32", restaurantId: "8", name: "Cooked Noodles", image: food_32, price: 15000, description: "Food provides essential nutrients...", category: "Cơm" }
+    { _id: "32", restaurantId: "8", name: "Cooked Noodles", image: food_32, price: 15000, description: "Food provides essential nutrients...", category: "Cơm" },
+
+    // --- Extra demo items for restaurantId: "3" to test category grouping ---
+    { _id: "33", restaurantId: "3", name: "Bánh Midnight Matcha", image: food_19, price: 36000, description: "Bánh choco nhân ganache matcha béo thơm.", category: "Món được yêu thích" },
+    { _id: "34", restaurantId: "3", name: "Bánh Sừng Bò Matcha", image: food_14, price: 17600, description: "Cornet giòn rụm với nhân kem matcha.", category: "Món được yêu thích" },
+    { _id: "35", restaurantId: "3", name: "Hộp Tiramisu Matcha", image: food_20, price: 216000, description: "Mousse matcha & phô mai mascarpone.", category: "Món được yêu thích" },
+
+    { _id: "36", restaurantId: "3", name: "Croissant Trà Xanh Hạt Dẻ", image: food_17, price: 31200, description: "Lớp sừng trâu choco cùng nhân kem matcha.", category: "Phổ biến" },
+    { _id: "37", restaurantId: "3", name: "Bánh Mì Kem Matcha Socola", image: food_16, price: 29000, description: "Bánh mì phủ choco kèm nhân matcha thơm.", category: "Phổ biến" },
+
+    { _id: "38", restaurantId: "3", name: "Bánh Trung Thu Thập Cẩm", image: food_25, price: 56000, description: "Bánh trung thu thập cẩm truyền thống.", category: "Bánh trung thu" },
+    { _id: "39", restaurantId: "3", name: "Bánh Trung Thu Matcha Đậu Đỏ", image: food_26, price: 62000, description: "Nhân matcha hòa quyện đậu đỏ.", category: "Bánh trung thu" },
+
+    { _id: "40", restaurantId: "3", name: "Bánh Mới Vị Kem Dừa", image: food_18, price: 33000, description: "Sản phẩm mới, vị kem dừa thanh mát.", category: "Sản phẩm mới" },
+    { _id: "41", restaurantId: "3", name: "Bánh Quy Bơ Nướng", image: food_15, price: 24000, description: "Bánh quy bơ giòn, mới ra lò.", category: "Sản phẩm mới" },
+
+    { _id: "42", restaurantId: "3", name: "Sandwich Gà Teriyaki", image: food_13, price: 42000, description: "Sandwich gà sốt teriyaki đậm đà.", category: "Sandwich" },
+    { _id: "43", restaurantId: "3", name: "Bánh Mì Trứng Muối", image: food_11, price: 38000, description: "Bánh mì nhân sốt trứng muối mặn mà.", category: "Bánh mì" },
+    { _id: "44", restaurantId: "3", name: "Cà Phê Sữa Matcha", image: food_10, price: 32000, description: "Kết hợp cà phê sữa và matcha lạ miệng.", category: "Cà phê" },
+    { _id: "45", restaurantId: "3", name: "Bánh Kem Tiramisu Nhỏ", image: food_12, price: 65000, description: "Bánh kem tiramisu size 10cm.", category: "Bánh kem" },
+    { _id: "46", restaurantId: "3", name: "Bánh Healthy Granola Bar", image: food_21, price: 27000, description: "Thanh granola yến mạch hạnh nhân.", category: "Healthy" },
+    { _id: "47", restaurantId: "3", name: "Trà Sữa Matcha Kem Cheese", image: food_9, price: 39000, description: "Trà sữa matcha phủ kem cheese mặn.", category: "Trà/Café" },
+    { _id: "48", restaurantId: "3", name: "Bánh Ngọt Bơ Sữa", image: food_22, price: 30000, description: "Bánh ngọt mềm, thơm bơ sữa.", category: "Bánh ngọt" }
 ];
