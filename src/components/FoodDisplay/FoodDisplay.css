@@ -15,6 +15,28 @@
     row-gap: 50px;
 }
 
+.menu-status{
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.menu-status.warning{
+    background: #fff7ed;
+    border-color: #f97316;
+    color: #9a3412;
+}
+
+.menu-empty{
+    margin: 20px 0;
+    color: #6b7280;
+    font-style: italic;
+}
+
 /* Category bar */
 .menu-cat-bar{ position:sticky; top:0; background:#fff; z-index:10; padding:10px 0; border-bottom:1px solid #f3f4f6; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
 .menu-cat-bar .chips{ display:flex; gap:12px; flex:1; flex-wrap:nowrap; overflow:auto; padding-bottom:0; scrollbar-width:none; }
@@ -66,6 +88,13 @@
 .rh-link{ color:#6b7280; text-decoration:underline; }
 .rh-open{ color:#6b7280; }
 .rh-address{ margin-top:8px; color:#374151; }
+.rh-hours{ margin-top:12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; }
+.rh-hours-title{ font-size:13px; font-weight:600; color:#111827; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em; }
+.rh-hours-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:6px 16px; }
+.rh-hours-row{ display:flex; justify-content:space-between; font-size:13px; color:#374151; }
+.rh-hours-day{ font-weight:500; }
+.rh-hours-time{ font-family:'Inter',sans-serif; }
+.rh-hours-summary{ font-size:13px; color:#374151; }
 .rh-tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .rh-tag{ color:#6b7280; font-size:14px; }
 
@@ -74,4 +103,5 @@
     .rh-left{ width:100%; flex:0 0 auto; }
     .rh-image{ height:180px; }
     .rh-name{ font-size:26px; }
+    .rh-hours-grid{ grid-template-columns:1fr; }
 }

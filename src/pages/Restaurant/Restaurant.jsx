@@ -3,7 +3,7 @@ import './Restaurant.css'
 import { assets } from '../../assets/assets'
 import { useNavigate } from 'react-router-dom'
 
-const Restaurant = ({ id, name, image,rating,address,cuisine, description }) => {
+const Restaurant = ({ id, name, image, rating, address, cuisine, description }) => {
   const navigate = useNavigate();  
 
   const handleClick = () => {
