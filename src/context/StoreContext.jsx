@@ -1,7 +1,9 @@
-import { createContext, useEffect, useState } from "react";
-import { restaurant_list,food_list } from "../assets/assets";
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { restaurant_list as staticRestaurants, food_list as staticFoodList } from "../assets/assets";
 import { item_options } from "../assets/itemOptions";
 import { getCookie, setCookie, deleteCookie } from "../utils/cookieUtils";
+import restaurantAPI from "../services/restaurantAPI";
+import { attachToken } from "../services/apiClient";
 
 // Tạo context
 export const StoreContext = createContext(null);
@@ -13,6 +15,10 @@ const StoreContextProvider = (props) => {
   const [cartLines, setCartLines] = useState([]);
   const [token, setToken] = useState("")
   const [user, setUser] = useState(null)
+  const [restaurants, setRestaurants] = useState(staticRestaurants || []);
+  const [isFetchingRestaurants, setIsFetchingRestaurants] = useState(false);
+  const [foods, setFoods] = useState(staticFoodList || []);
+  const foodsRef = useRef(staticFoodList || []);
 
   // Hàm thêm vào giỏ hàng với kiểm tra đăng nhập
   const addToCart = (itemId) => {
@@ -65,13 +71,15 @@ const StoreContextProvider = (props) => {
     return extra;
   };
 
+  const mapOptionValueIds = () => [];
+
   // Add item with options into cartLines
   const addToCartWithOptions = (itemId, selectionsObj, quantity = 1, note = '') => {
     if (!token) {
       alert("Vui lòng đăng nhập để thêm món ăn vào giỏ hàng!");
       return;
     }
-    const item = food_list.find(f => f._id === itemId);
+  const item = foods.find(f => f._id === itemId);
     if (!item) return;
     const key = generateLineKey(itemId, selectionsObj, note);
     const optionsPrice = computeOptionsPrice(item, selectionsObj);
@@ -116,7 +124,7 @@ const StoreContextProvider = (props) => {
     // legacy items
     for(const item in cartItems){
       if(cartItems[item] > 0){
-        let itemInfo = food_list.find((product)=>product._id === item);
+  let itemInfo = foods.find((product)=>product._id === item);
         if (itemInfo) {
           totalAmount += itemInfo.price * cartItems[item];
         }
@@ -129,12 +137,32 @@ const StoreContextProvider = (props) => {
     return totalAmount;
   }
 
+  const replaceRestaurantMenu = useCallback((restaurantId, items = []) => {
+    if (!restaurantId) return;
+    const restId = String(restaurantId);
+    setFoods(prev => {
+      const remaining = prev.filter(item => String(item.restaurantId) !== restId);
+      const next = [...remaining, ...items];
+      foodsRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const getRestaurantMenu = useCallback((restaurantId) => {
+    if (!restaurantId) return [];
+    const restId = String(restaurantId);
+    const fromState = foodsRef.current.filter(item => String(item.restaurantId) === restId);
+    if (fromState.length > 0) return fromState;
+    return staticFoodList.filter(item => String(item.restaurantId) === restId);
+  }, []);
+
   useEffect(() => {
     const storedToken = getCookie("auth_token");
     const storedUser = getCookie("user_data");
     
     if (storedToken) {
       setToken(storedToken);
+      attachToken(storedToken);
     }
     
     if (storedUser) {
@@ -189,6 +217,7 @@ const StoreContextProvider = (props) => {
     if (newToken) {
       setCookie("auth_token", newToken, 7); // Lưu 7 ngày
       setToken(newToken);
+      attachToken(newToken);
       
       if (userData) {
         setCookie("user_data", JSON.stringify(userData), 7);
@@ -198,13 +227,214 @@ const StoreContextProvider = (props) => {
       deleteCookie("auth_token");
       deleteCookie("user_data");
       setToken("");
+      attachToken(null);
       setUser(null);
       setCartItems({}); // Xóa giỏ hàng khi đăng xuất
       setCartLines([]);
     }
   }
 
+  const normalizeRestaurant = (item, index = 0) => {
+    if (!item || typeof item !== "object") return null;
+    const fallback = staticRestaurants?.[index % (staticRestaurants?.length || 1)] ?? {};
+    const normalizeOpeningHours = (value, fallbackValue) => {
+      const input = value ?? fallbackValue;
+      if (!input) return { list: [], summary: "" };
+
+      if (typeof input === "string") {
+        const trimmed = input.trim();
+        return {
+          list: trimmed
+            ? [{ day: "Lịch", label: trimmed }]
+            : [],
+          summary: trimmed,
+        };
+      }
+
+      const source = Array.isArray(input)
+        ? input.reduce((acc, entry) => {
+            if (!entry) return acc;
+            if (typeof entry === "string") {
+              const [dayPart, ...rest] = entry.split(":");
+              if (dayPart && rest.length) {
+                acc[dayPart.trim()] = rest.join(":").trim();
+              }
+            } else if (typeof entry === "object") {
+              const key = entry.day ?? entry.Day ?? entry.weekday ?? entry.Weekday;
+              const val = entry.hours ?? entry.value ?? entry.time ?? entry.Hours ?? entry.Value;
+              if (key && val) acc[key] = String(val).trim();
+            }
+            return acc;
+          }, {})
+        : input;
+
+      if (!source || typeof source !== "object") {
+        return { list: [], summary: "" };
+      }
+
+      const dayOrder = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
+
+      const normalizeLookup = (obj, day) =>
+        obj?.[day] ??
+        obj?.[day.toLowerCase()] ??
+        obj?.[day.slice(0, 3)] ??
+        obj?.[day.slice(0, 3).toLowerCase()];
+
+      const list = dayOrder
+        .map((day) => {
+          const raw = normalizeLookup(source, day);
+          if (!raw) return null;
+          const label = String(raw).trim();
+          if (!label) return null;
+          return { day, label };
+        })
+        .filter(Boolean);
+
+      if (list.length === 0) {
+        return {
+          list: Object.entries(source ?? {})
+            .map(([day, val]) => ({ day, label: String(val).trim() }))
+            .filter(({ label }) => !!label),
+          summary: Object.entries(source ?? {})
+            .map(([day, val]) => `${day}: ${String(val).trim()}`)
+            .join(" | "),
+        };
+      }
+
+      return {
+        list,
+        summary: list.map(({ day, label }) => `${day}: ${label}`).join(" | "),
+      };
+    };
+
+    const id =
+      item._id ??
+      item.id ??
+      item.merchantId ??
+      item.code ??
+      fallback._id ??
+      `${Date.now()}-${index}`;
+
+    const image =
+      item.imageUrl ??
+      item.logoUrl ??
+      item.coverImage ??
+      item.image ??
+      fallback.image;
+
+    const ratingRaw =
+      item.avgRating ??
+      item.rating ??
+      item.averageRating ??
+      item.score ??
+      fallback.rating ??
+      0;
+
+    const ratingCount =
+      item.ratingCount ??
+      item.reviewCount ??
+      item.totalReviews ??
+      fallback.ratingCount ??
+      0;
+
+    const cuisineRaw =
+      item.cuisineTypes ??
+      item.cuisine ??
+      item.cuisines ??
+      item.tags ??
+      item.category ??
+      fallback.cuisine ??
+      "";
+
+    const cuisine = Array.isArray(cuisineRaw)
+      ? cuisineRaw.filter(Boolean)
+      : cuisineRaw;
+
+    const composedAddress = [item.street, item.ward, item.district, item.city]
+      .filter(Boolean)
+      .join(", ");
+
+    const address =
+      item.address ??
+      (composedAddress ? composedAddress : undefined) ??
+      fallback.address ??
+      "";
+
+    const { list: openingHoursList, summary: openingHoursSummary } = normalizeOpeningHours(
+      item.openingHours,
+      fallback.openingHours
+    );
+
+    return {
+      _id: String(id),
+      name: item.name ?? item.merchantName ?? fallback.name ?? "Nhà hàng",
+      image,
+      rating: Number.isFinite(Number(ratingRaw)) ? Number(Number(ratingRaw).toFixed(1)) : Number(fallback.rating ?? 0),
+      ratingCount: Number(ratingCount) || 0,
+      description: item.introduction ?? item.description ?? item.shortDescription ?? fallback.description ?? "",
+      address,
+      cuisine,
+      openingHours: openingHoursList,
+      openingHoursSummary,
+      status: item.status ?? fallback.status ?? "UNKNOWN",
+      raw: item,
+    };
+  };
+
+  // Fetch restaurant list from backend
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadRestaurants = async () => {
+      setIsFetchingRestaurants(true);
+      try {
+        const list = await restaurantAPI.fetchActiveMerchants(controller.signal);
+        if (Array.isArray(list) && list.length > 0) {
+          const normalized = list
+            .filter(item => {
+              const status = item?.status ?? "ACTIVE";
+              return typeof status !== "string" || status.toUpperCase() === "ACTIVE";
+            })
+            .map((item, idx) => normalizeRestaurant(item, idx))
+            .filter(Boolean);
+          setRestaurants(normalized);
+        } else if (Array.isArray(list)) {
+          setRestaurants([]);
+        }
+      } catch (error) {
+        if (error?.code === "ERR_CANCELED") {
+          return;
+        }
+        console.error("Không thể tải danh sách nhà hàng:", error);
+      } finally {
+        setIsFetchingRestaurants(false);
+      }
+    };
+
+    loadRestaurants();
+    return () => controller.abort();
+  }, [token]);
+
+  const restaurantValue = useMemo(() => {
+    if (!restaurants || restaurants.length === 0) {
+      return staticRestaurants || [];
+    }
+    return restaurants;
+  }, [restaurants]);
+
   // Hàm kiểm tra xem người dùng có đăng nhập hay không
+  const clearCart = useCallback(() => {
+    setCartItems({});
+    setCartLines([]);
+  }, []);
+
   const isLoggedIn = () => {
     return !!token;
   }
@@ -224,8 +454,11 @@ const StoreContextProvider = (props) => {
     addToCartWithOptions,
     updateCartLineQty,
     removeCartLine,
-    restaurant_list,
-    food_list,
+    clearCart,
+    restaurant_list: restaurantValue,
+    food_list: foods,
+    getRestaurantMenu,
+    replaceRestaurantMenu,
     getTotalCartAmount,
     token,
     user,
@@ -233,6 +466,7 @@ const StoreContextProvider = (props) => {
     isLoggedIn,
     logout
     ,mockLogin
+    ,isFetchingRestaurants
   }
 
   return (

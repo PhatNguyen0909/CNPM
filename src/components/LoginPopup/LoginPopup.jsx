@@ -33,15 +33,30 @@ const LoginPopup = ({setShowLogin}) => {
         }
         else{
           payload = await userAPI.register({
-          fullName: data.name,
+          name: data.name,
           email: data.email,
           password: data.password,
         });
         }
         if(!payload?.token) throw new Error("Không tìm thấy token");
+
+        const profile = payload.user || {};
+        const displayName =
+          profile.fullName ||
+          profile.name ||
+          profile.username ||
+          payload.name ||
+          payload.fullName ||
+          data.name ||
+          (payload.email || data.email || "").split("@")[0];
+
+        const email = profile.email || payload.email || data.email;
+        const id = profile.id || profile._id || profile.userId || profile.uid;
+
         setToken(payload.token,{
-          name: payload.fullName || data.name || data.email.split("@")[0],
-          email: payload.email || data.email,
+          id,
+          name: displayName,
+          email,
         });
         setShowLogin(false);
         alert(`${currState === "Login" ? "Đăng nhập" : "Đăng ký"} thành công!`);

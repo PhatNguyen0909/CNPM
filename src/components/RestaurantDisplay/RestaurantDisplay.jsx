@@ -4,7 +4,7 @@ import { StoreContext } from '../../context/StoreContext'
 import Restaurant from '../../pages/Restaurant/Restaurant'
 
 const RestaurantDisplay = ({ selectedCuisine, ratingFilter = 0, sortBy = 'highestRating', onOpenFilterMobile }) => {
-  const { restaurant_list, food_list } = useContext(StoreContext)
+  const { restaurant_list, food_list, isFetchingRestaurants } = useContext(StoreContext)
   const [page, setPage] = useState(1);
   const pageSize = 8; // số nhà hàng mỗi trang
 
@@ -17,8 +17,12 @@ const RestaurantDisplay = ({ selectedCuisine, ratingFilter = 0, sortBy = 'highes
     const cloned = [...list];
     switch (sortBy) {
       case 'mostReviews':
-        // Chưa có dữ liệu số review -> tạm random stable dựa trên _id để demo
-        return cloned.sort((a,b)=> (parseInt(b._id)%3) - (parseInt(a._id)%3) || b.rating - a.rating);
+        return cloned.sort((a,b)=> {
+          const reviewsA = Number(a.ratingCount || 0);
+          const reviewsB = Number(b.ratingCount || 0);
+          if (reviewsB !== reviewsA) return reviewsB - reviewsA;
+          return Number(b.rating || 0) - Number(a.rating || 0);
+        });
       case 'newest':
         // Giả sử _id lớn hơn là mới hơn
         return cloned.sort((a,b)=> parseInt(b._id) - parseInt(a._id));
@@ -46,7 +50,9 @@ const RestaurantDisplay = ({ selectedCuisine, ratingFilter = 0, sortBy = 'highes
           )}
         </div>
         <div className="restaurant-display-list">
-          {paged.map((item) => (
+          {isFetchingRestaurants ? (
+            <p>Đang tải danh sách nhà hàng...</p>
+          ) : paged.map((item) => (
             <Restaurant
               key={item._id}
               id={item._id}
@@ -98,7 +104,9 @@ const RestaurantDisplay = ({ selectedCuisine, ratingFilter = 0, sortBy = 'highes
         )}
       </div>
       <div className="restaurant-display-list">
-        {filteredRestaurants.length > 0 ? (
+        {isFetchingRestaurants ? (
+          <p>Đang tải danh sách nhà hàng...</p>
+        ) : filteredRestaurants.length > 0 ? (
           paged.map((item) => (
             <Restaurant
               key={item._id}

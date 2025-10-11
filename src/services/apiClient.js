@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Base URL ưu tiên từ biến môi trường Vite, fallback sang URL tạm thời (thay bằng của bạn)
-const API_BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'https://traditions-her-sequence-sixth.trycloudflare.com/potato-api';
+const API_BASE_URL =
+  import.meta?.env?.VITE_API_BASE_URL?.trim() ||
+  '/potato-api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,7 +12,14 @@ export const api = axios.create({
   timeout: 15000
 });
 
-// Interceptor có thể thêm token nếu cần
+const publicApi = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  timeout: 15000
+});
+
 export const attachToken = (token) => {
   if (token) {
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -19,5 +27,7 @@ export const attachToken = (token) => {
     delete api.defaults.headers.common.Authorization;
   }
 };
+
+export const getPublicApi = () => publicApi;
 
 export default api;
