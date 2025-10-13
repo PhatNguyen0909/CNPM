@@ -67,55 +67,17 @@ const PlaceOrder = () => {
     if (submitting) return;
     setSubmitError(null);
 
-    const pickFirst = (...values) => {
-      for (const value of values) {
-        if (value === null || value === undefined) continue;
-        const sanitized = typeof value === 'string' ? value.trim() : value;
-        if (sanitized === '' || sanitized === undefined || sanitized === null) continue;
-        return sanitized;
-      }
-      return null;
-    };
-
-    const deriveMerchantId = (item) => {
-      if (!item) return null;
-      const raw = item.raw || {};
-      const candidate = pickFirst(
-        item.restaurantId,
-        raw.restaurantId,
-        raw.merchantId,
-        raw.merchantID,
-        raw.idMerchant,
-        raw.merchant?.id
-      );
-      if (candidate === null || candidate === undefined) return null;
-      if (typeof candidate === 'number') return candidate;
-      const asNumber = Number(candidate);
-      if (!Number.isNaN(asNumber) && String(asNumber) === String(candidate).trim()) {
-        return asNumber;
-      }
-      return String(candidate).trim();
-    };
-
     const buildMenuItemId = (item) => {
       if (!item) return null;
       const raw = item.raw || {};
-      const candidate = pickFirst(
-        item.menuItemNumericId,
-        item.menuItemBackendId,
-        raw.menuItemId,
-        raw.menuItemID,
-        raw.menuItemCode,
-        raw.id,
-        raw._id,
-        raw.itemId,
-        raw.itemID,
-        raw.menuItemResponse?.menuItemId,
-        raw.menuItemResponse?.id,
-        raw.menuItem?.id,
-        item._id
-      );
-
+      const candidate =
+        raw.menuItemId ??
+        raw.menuItemID ??
+        raw.itemId ??
+        raw.itemID ??
+        raw.id ??
+        raw._id ??
+        item._id;
       if (candidate === null || candidate === undefined) return null;
       if (typeof candidate === 'number') return candidate;
       const asNumber = Number(candidate);
@@ -126,7 +88,6 @@ const PlaceOrder = () => {
     };
 
     const orderItems = [];
-    const merchantIds = new Set();
 
     Object.entries(cartItems || {}).forEach(([itemId, qty]) => {
       if (!qty) return;
@@ -136,20 +97,11 @@ const PlaceOrder = () => {
       if (!item) return;
       const menuItemId = buildMenuItemId(item);
       if (!menuItemId && menuItemId !== 0) return;
-      const merchantId = deriveMerchantId(item);
-      if (merchantId || merchantId === 0) {
-        merchantIds.add(String(merchantId));
-      }
-      const existing = orderItems.find(entry => entry.menuItemId === menuItemId);
-      if (existing) {
-        existing.quantity += numericQty;
-      } else {
-        orderItems.push({
-          menuItemId,
-          quantity: numericQty,
-          listOptionValueId: [],
-        });
-      }
+      orderItems.push({
+        menuItemId,
+        quantity: numericQty,
+        listOptionValueId: [],
+      });
     });
 
     (cartLines || []).forEach((line) => {
@@ -159,20 +111,12 @@ const PlaceOrder = () => {
       const item = food_list.find(food => String(food._id) === String(line.itemId));
       const menuItemId = buildMenuItemId(item);
       if (!menuItemId && menuItemId !== 0) return;
-      const merchantId = deriveMerchantId(item);
-      if (merchantId || merchantId === 0) {
-        merchantIds.add(String(merchantId));
-      }
-      const existing = orderItems.find(entry => entry.menuItemId === menuItemId);
-      if (existing) {
-        existing.quantity += numericQty;
-      } else {
-        orderItems.push({
-          menuItemId,
-          quantity: numericQty,
-          listOptionValueId: [],
-        });
-      }
+      const optionIds = Array.isArray(line.optionValueIds) ? line.optionValueIds : [];
+      orderItems.push({
+        menuItemId,
+        quantity: numericQty,
+        listOptionValueId: optionIds,
+      });
     });
 
     if (orderItems.length === 0) {
@@ -209,27 +153,15 @@ const PlaceOrder = () => {
       listItems: orderItems,
     };
 
-    if (merchantIds.size === 1) {
-      const [onlyMerchant] = Array.from(merchantIds);
-      const numericMerchant = Number(onlyMerchant);
-      payload.merchantId = Number.isNaN(numericMerchant) ? onlyMerchant : numericMerchant;
-    }
-
-    console.log('Order items prepared', orderItems.map(item => ({
-      menuItemId: item.menuItemId,
-      quantity: item.quantity,
-      type: typeof item.menuItemId,
-    })));
     try {
       setSubmitting(true);
-      console.log('Submitting order payload', payload);
       const response = await orderAPI.createOrder(payload);
       const message = response?.message ?? 'Đặt hàng thành công! Cảm ơn bạn đã sử dụng dịch vụ.';
       alert(message);
       clearCart();
       navigate('/');
     } catch (error) {
-      console.error('Không thể tạo đơn hàng:', error?.response?.data ?? error);
+      console.error('Không thể tạo đơn hàng:', error);
       const message = error?.response?.data?.message ?? error?.message ?? 'Không thể tạo đơn hàng. Vui lòng thử lại.';
       setSubmitError(message);
     } finally {

@@ -53,24 +53,21 @@ const Cart = () => {
           if(cartItems[item._id]>0)
           {
             return(
-            <React.Fragment key={item._id}>
-              <div className='cart-items-title cart-items-item'>
+            <><div className='cart-items-title cart-items-item'>
                 <img src={item.image} alt="" />
                 <p>{item.name}</p>
                 <p>{formatVND(item.price)}</p>
                 <p>{cartItems[item._id]}</p>
                 <p>{formatVND(item.price * cartItems[item._id])}</p>
                 <p onClick={()=>handleRemoveFromCart(item._id)} className='cross'>x</p>
-              </div>
-              <hr />
-            </React.Fragment>
+              </div><hr /></>
             )
           }
         })}
 
         {cartLines.map(line => (
-          <React.Fragment key={line.key}>
-            <div className='cart-items-title cart-items-item'>
+          <>
+            <div key={line.key} className='cart-items-title cart-items-item'>
               <img src={line.image} alt="" />
               <p>
                 {line.name}
@@ -95,7 +92,7 @@ const Cart = () => {
               <p onClick={()=>removeCartLine(line.key)} className='cross'>x</p>
             </div>
             <hr />
-          </React.Fragment>
+          </>
         ))}
       </div>
       <br />

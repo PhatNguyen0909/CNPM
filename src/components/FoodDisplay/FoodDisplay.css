@@ -79,7 +79,11 @@
 .rh-image{ width:100%; height:220px; object-fit:cover; border-radius:12px; }
 .rh-right{ flex:1; min-width:0; }
 .rh-top-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.rh-name-wrap{ display:flex; align-items:center; gap:10px; }
 .rh-name{ font-size:32px; line-height:1.2; margin:0; font-weight:700; }
+.rh-info-btn{ border:none; background:#f3f4f6; width:32px; height:32px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+.rh-info-btn img{ width:18px; height:18px; display:block; }
+.rh-info-btn:hover{ background:#e5e7eb; }
 .rh-fav-btn{ border:1px solid #f59e0b; color:#f59e0b; background:#fff; padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:600; }
 .rh-fav-btn:hover{ background:#fff7ed; }
 .rh-meta{ margin-top:6px; color:#6b7280; display:flex; align-items:center; gap:8px; font-size:14px; }
@@ -98,10 +102,30 @@
 .rh-tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .rh-tag{ color:#6b7280; font-size:14px; }
 
+.rest-info-modal{ position:fixed; inset:0; z-index:50; display:flex; justify-content:center; align-items:flex-start; padding:60px 20px; pointer-events:none; }
+.rest-info-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,0.45); pointer-events:auto; }
+.rest-info-content{ position:relative; max-width:520px; width:100%; background:#fff; border-radius:16px; padding:24px; box-shadow:0 20px 48px rgba(15,23,42,0.18); pointer-events:auto; overflow:hidden; z-index:1; }
+.rest-info-header{ display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:16px; }
+.rest-info-name{ margin:0; font-size:24px; font-weight:700; color:#111827; }
+.rest-info-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; color:#6b7280; font-size:13px; }
+.rest-info-close{ border:none; background:#f3f4f6; width:32px; height:32px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+.rest-info-close img{ width:14px; height:14px; display:block; }
+.rest-info-close:hover{ background:#e5e7eb; }
+.rest-info-body{ max-height:60vh; overflow:auto; display:flex; flex-direction:column; gap:18px; padding-right:6px; }
+.rest-info-section h3{ margin:0 0 6px; font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:#111827; }
+.rest-info-section p{ margin:0; color:#374151; font-size:14px; line-height:1.5; }
+.rest-info-hours-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:6px 16px; }
+.rest-info-hours-row{ display:flex; justify-content:space-between; font-size:13px; color:#374151; }
+.rest-info-hours-day{ font-weight:500; }
+
+@media (max-width: 900px){
+    .rest-info-modal{ align-items:center; padding:24px; }
+    .rest-info-content{ max-width:420px; }
+}
+
 @media (max-width: 900px){
     .restaurant-header{ flex-direction:column; }
     .rh-left{ width:100%; flex:0 0 auto; }
     .rh-image{ height:180px; }
     .rh-name{ font-size:26px; }
-    .rh-hours-grid{ grid-template-columns:1fr; }
 }
