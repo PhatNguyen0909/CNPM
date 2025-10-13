@@ -30,47 +30,12 @@ const FoodDisplay = ({category}) => {
   const normalizeMenuItem = useCallback((item, index = 0) => {
     if (!item) return null;
     const status = String(item.status ?? item.itemStatus ?? 'ACTIVE').toUpperCase();
-    const pickFirst = (...values) => {
-      for (const value of values) {
-        if (value === null || value === undefined) continue;
-        const val = typeof value === 'string' ? value.trim() : value;
-        if (val === '' || val === undefined || val === null) continue;
-        return val;
-      }
-      return null;
-    };
-
-    const backendIdRaw = pickFirst(
-      item.menuItemId,
-      item.menuItemID,
-      item.menuItemCode,
-      item.itemId,
-      item.itemID,
-      item.id,
-      item._id,
-      item.code,
-      item.uuid,
-      item.menuItem?.id,
-      item.menuItemResponse?.menuItemId,
-      item.menuItemResponse?.id,
-      item.menu_item_id,
-      item.menu_item_Id,
-      item.menu_itemID
-    );
-
-    const normalizeNumericId = (value) => {
-      if (value === null || value === undefined) return null;
-      if (typeof value === 'number' && Number.isFinite(value)) return value;
-      const numeric = Number(String(value).trim());
-      if (Number.isFinite(numeric) && String(numeric) === String(value).trim()) {
-        return numeric;
-      }
-      return null;
-    };
-
-    const backendIdNumeric = normalizeNumericId(backendIdRaw);
-
-    const baseId = backendIdRaw ?? `${restaurantId || 'menu'}-${index}`;
+    const baseId =
+      item._id ??
+      item.id ??
+      item.itemId ??
+      item.menuItemId ??
+      `${restaurantId || 'menu'}-${index}`;
     const restaurantKey =
       item.restaurantId ??
       item.merchantId ??
@@ -99,8 +64,6 @@ const FoodDisplay = ({category}) => {
       image: item.imgUrl ?? item.imageUrl ?? item.image ?? '',
       category,
       status,
-      menuItemBackendId: backendIdRaw,
-      menuItemNumericId: backendIdNumeric,
       optionResponses: Array.isArray(item.optionResponses) ? item.optionResponses : [],
       raw: item,
     };
@@ -129,12 +92,6 @@ const FoodDisplay = ({category}) => {
           .filter(item => (item.status ?? 'ACTIVE').toUpperCase() === 'ACTIVE');
 
         if (normalized.length > 0) {
-          console.log('Loaded menu items', normalized.slice(0, 5).map(entry => ({
-            id: entry._id,
-            backendId: entry.menuItemBackendId,
-            rawId: entry.raw?.menuItemId ?? entry.raw?.id ?? entry.raw?._id,
-            status: entry.status,
-          })));
           replaceRestaurantMenu(restaurantId, normalized);
           setMenuItems(normalized);
         } else {
@@ -159,6 +116,7 @@ const FoodDisplay = ({category}) => {
   const [activeCat, setActiveCat] = useState('Tất cả');
   const [scrollingCat, setScrollingCat] = useState('');
   const [showCatDropdown, setShowCatDropdown] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const barRef = useRef(null);
   const featuredScrollerRef = useRef(null);
   const sectionsRef = useRef({}); // map cat -> section element
@@ -190,6 +148,33 @@ const FoodDisplay = ({category}) => {
       'Friday',
       'Saturday',
     ];
+    const dayLabelMap = {
+      sunday: 'Chủ nhật',
+      monday: 'Thứ 2',
+      tuesday: 'Thứ 3',
+      wednesday: 'Thứ 4',
+      thursday: 'Thứ 5',
+      friday: 'Thứ 6',
+      saturday: 'Thứ 7',
+    };
+    const normalizeDayLabel = (value) => {
+      if (!value) return '';
+      const str = String(value).trim();
+      if (!str) return '';
+      const lower = str.toLowerCase();
+      if (dayLabelMap[lower]) return dayLabelMap[lower];
+      const short = lower.slice(0, 3);
+      switch (short) {
+        case 'sun': return dayLabelMap.sunday;
+        case 'mon': return dayLabelMap.monday;
+        case 'tue': return dayLabelMap.tuesday;
+        case 'wed': return dayLabelMap.wednesday;
+        case 'thu': return dayLabelMap.thursday;
+        case 'fri': return dayLabelMap.friday;
+        case 'sat': return dayLabelMap.saturday;
+        default: return str;
+      }
+    };
     const todayName = weekdayNames[new Date().getDay()];
     const todayEntry = list.find(item => {
       const label = item?.day ?? '';
@@ -197,11 +182,79 @@ const FoodDisplay = ({category}) => {
       const normalized = String(label).toLowerCase();
       return normalized === todayName.toLowerCase() || normalized.startsWith(todayName.slice(0, 3).toLowerCase());
     });
+    const localizedList = list.map(entry => ({
+      ...entry,
+      dayLabel: normalizeDayLabel(entry?.day ?? entry?.label ?? ''),
+    }));
+    const replaceDayTokens = (text) => {
+      if (!text) return '';
+      let result = String(text);
+      const fullMap = {
+        Sunday: dayLabelMap.sunday,
+        Monday: dayLabelMap.monday,
+        Tuesday: dayLabelMap.tuesday,
+        Wednesday: dayLabelMap.wednesday,
+        Thursday: dayLabelMap.thursday,
+        Friday: dayLabelMap.friday,
+        Saturday: dayLabelMap.saturday,
+      };
+      const shortMap = {
+        Sun: dayLabelMap.sunday,
+        Mon: dayLabelMap.monday,
+        Tue: dayLabelMap.tuesday,
+        Wed: dayLabelMap.wednesday,
+        Thu: dayLabelMap.thursday,
+        Fri: dayLabelMap.friday,
+        Sat: dayLabelMap.saturday,
+      };
+      Object.entries(fullMap).forEach(([en, vn]) => {
+        const regex = new RegExp(`\\b${en}\\b`, 'gi');
+        result = result.replace(regex, vn);
+      });
+      Object.entries(shortMap).forEach(([en, vn]) => {
+        const regex = new RegExp(`\\b${en}\\b`, 'gi');
+        result = result.replace(regex, vn);
+      });
+      return result;
+    };
+    const localizedSummary = localizedList.length > 0
+      ? localizedList.map(({ day, dayLabel, label }) => `${dayLabel || day}: ${label}`).join(' | ')
+      : replaceDayTokens(summary);
     return {
       today: todayEntry?.label || '',
-      list,
-      summary,
+      list: localizedList,
+      summary: localizedSummary,
     };
+  }, [restaurant]);
+
+  const cuisineTags = useMemo(() => {
+    if (!restaurant) return [];
+    const raw = Array.isArray(restaurant.cuisine)
+      ? restaurant.cuisine
+      : String(restaurant.cuisine || '').split(',');
+    return raw.map(t => String(t).trim()).filter(Boolean);
+  }, [restaurant]);
+
+  const restaurantDescription = useMemo(() => {
+    if (!restaurant) return '';
+    return (
+      restaurant.description ||
+      restaurant.introduction ||
+      restaurant.summary ||
+      restaurant.about ||
+      ''
+    );
+  }, [restaurant]);
+
+  const restaurantContact = useMemo(() => {
+    if (!restaurant) return '';
+    return (
+      restaurant.phone ||
+      restaurant.contact ||
+      restaurant.hotline ||
+      restaurant.telephone ||
+      ''
+    );
   }, [restaurant]);
 
   // Reset scroll highlight when switching out of "Tất cả"
@@ -261,7 +314,17 @@ const FoodDisplay = ({category}) => {
           </div>
           <div className="rh-right">
             <div className="rh-top-row">
-              <h1 className="rh-name">{restaurant.name}</h1>
+              <div className="rh-name-wrap">
+                <h1 className="rh-name">{restaurant.name}</h1>
+                <button
+                  type="button"
+                  className="rh-info-btn"
+                  aria-label="Xem thông tin nhà hàng"
+                  onClick={() => setShowInfoModal(true)}
+                >
+                  <img src={assets.moreinfo_icon} alt="More info" />
+                </button>
+              </div>
               <button className="rh-fav-btn" type="button">❤ Thêm vào Yêu thích</button>
             </div>
             <div className="rh-meta">
@@ -280,32 +343,78 @@ const FoodDisplay = ({category}) => {
               )}
             </div>
             <div className="rh-address">{restaurant.address}</div>
-            {(openingHoursInfo.list.length > 0 || openingHoursInfo.summary) && (
-              <div className="rh-hours">
-                {openingHoursInfo.list.length > 0 ? (
-                  <>
-                    <div className="rh-hours-title">Lịch mở cửa</div>
-                    <div className="rh-hours-grid">
-                      {openingHoursInfo.list.map(({ day, label }) => (
-                        <div key={day} className="rh-hours-row">
-                          <span className="rh-hours-day">{day}</span>
-                          <span className="rh-hours-time">{label}</span>
+            {cuisineTags.length > 0 && (
+              <div className="rh-tags">
+                {cuisineTags.map((t, i) => (
+                  <span key={i} className="rh-tag">{t}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {showInfoModal && restaurant && (
+        <div className="rest-info-modal" role="dialog" aria-modal="true">
+          <div className="rest-info-content">
+            <div className="rest-info-header">
+              <div>
+                <h2 className="rest-info-name">{restaurant.name}</h2>
+                {cuisineTags.length > 0 && (
+                  <div className="rest-info-tags">
+                    {cuisineTags.map((t, i) => (
+                      <span key={i}>{t}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                className="rest-info-close"
+                aria-label="Đóng"
+                onClick={() => setShowInfoModal(false)}
+              >
+                <img src={assets.cross_icon} alt="close" />
+              </button>
+            </div>
+            <div className="rest-info-body">
+              {restaurantDescription && (
+                <section className="rest-info-section">
+                  <h3>Giới thiệu</h3>
+                  <p>{restaurantDescription}</p>
+                </section>
+              )}
+              {restaurant.address && (
+                <section className="rest-info-section">
+                  <h3>Địa chỉ</h3>
+                  <p>{restaurant.address}</p>
+                </section>
+              )}
+              {(openingHoursInfo.list.length > 0 || openingHoursInfo.summary) && (
+                <section className="rest-info-section">
+                  <h3>Giờ hoạt động</h3>
+                  {openingHoursInfo.list.length > 0 ? (
+                    <div className="rest-info-hours-grid">
+                      {openingHoursInfo.list.map(({ day, dayLabel, label }) => (
+                        <div key={`${day}-${label}`} className="rest-info-hours-row">
+                          <span className="rest-info-hours-day">{dayLabel || day}</span>
+                          <span className="rest-info-hours-time">{label}</span>
                         </div>
                       ))}
                     </div>
-                  </>
-                ) : (
-                  <div className="rh-hours-summary">{openingHoursInfo.summary}</div>
-                )}
-              </div>
-            )}
-            <div className="rh-tags">
-              {(Array.isArray(restaurant.cuisine) ? restaurant.cuisine : (restaurant.cuisine || '').split(','))
-                .map((t, i) => (
-                  <span key={i} className="rh-tag">{String(t).trim()}</span>
-                ))}
+                  ) : (
+                    <p>{openingHoursInfo.summary}</p>
+                  )}
+                </section>
+              )}
+              {restaurantContact && (
+                <section className="rest-info-section">
+                  <h3>Liên hệ</h3>
+                  <p>{restaurantContact}</p>
+                </section>
+              )}
             </div>
           </div>
+          <div className="rest-info-backdrop" onClick={() => setShowInfoModal(false)} aria-hidden="true" />
         </div>
       )}
       {menuLoading && <div className="menu-status">Đang tải menu...</div>}

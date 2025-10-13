@@ -9,7 +9,7 @@ const Navbar = ({setShowLogin}) => {
 
   const[menu, setMenu] = useState("home");
   const[showDropdown, setShowDropdown] = useState(false);
-  const{getTotalCartAmount, token, user, logout, mockLogin} = useContext(StoreContext);
+  const{getTotalCartAmount, token, user, logout} = useContext(StoreContext);
   const timeoutRef = useRef(null);
 
   const handleMouseEnter = () => {
@@ -38,13 +38,7 @@ const Navbar = ({setShowLogin}) => {
             </div>
         </div>
         {!token ? (
-          <>
-            <button onClick={()=>setShowLogin(true)}>Đăng nhập</button>
-            <button style={{backgroundColor:'#6b7280'}} onClick={()=>{
-              try{ localStorage.setItem('mock_login','1'); }catch(e){}
-              mockLogin();
-            }}>Đăng nhập tài khoản admin</button>
-          </>
+          <button onClick={()=>setShowLogin(true)}>Đăng nhập</button>
         ) : (
           <div 
             className='navbar-profile'

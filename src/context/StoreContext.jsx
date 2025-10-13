@@ -71,7 +71,42 @@ const StoreContextProvider = (props) => {
     return extra;
   };
 
-  const mapOptionValueIds = () => [];
+  const mapOptionValueIds = (item, selectionsObj) => {
+    if (!item || !selectionsObj) return [];
+    const normalize = (value) => String(value ?? '').trim().toLowerCase();
+    const selectionKeys = Object.entries(selectionsObj).reduce((acc, [key, values]) => {
+      acc[normalize(key)] = (values || []).map(normalize);
+      return acc;
+    }, {});
+
+    const collectIds = (source) => {
+      const ids = [];
+      (source || []).forEach(group => {
+        if (!group) return;
+        const groupLabel = normalize(group.title ?? group.optionName ?? group.name ?? group.groupName ?? group.label);
+        const desired = selectionKeys[groupLabel];
+        if (!desired || desired.length === 0) return;
+        const values = group.optionValueResponses ?? group.optionValues ?? group.values ?? group.options ?? [];
+        values.forEach(val => {
+          const valueLabel = normalize(val?.optionValueName ?? val?.valueName ?? val?.name ?? val?.label);
+          if (desired.includes(valueLabel)) {
+            const id = val?.optionValueId ?? val?.id ?? val?.valueId ?? val?._id;
+            if (id !== undefined && id !== null) {
+              ids.push(id);
+            }
+          }
+        });
+      });
+      return ids;
+    };
+
+    const normalizedIds = collectIds(item.optionResponses);
+    if (normalizedIds.length > 0) return normalizedIds;
+    if (item.raw) {
+      return collectIds(item.raw.optionResponses);
+    }
+    return [];
+  };
 
   // Add item with options into cartLines
   const addToCartWithOptions = (itemId, selectionsObj, quantity = 1, note = '') => {
@@ -83,6 +118,7 @@ const StoreContextProvider = (props) => {
     if (!item) return;
     const key = generateLineKey(itemId, selectionsObj, note);
     const optionsPrice = computeOptionsPrice(item, selectionsObj);
+    const optionValueIds = mapOptionValueIds(item, selectionsObj);
 
     setCartLines(prev => {
       const idx = prev.findIndex(l => l.key === key);
@@ -101,6 +137,7 @@ const StoreContextProvider = (props) => {
           basePrice: item.price,
           selections: selectionsObj, // { groupTitle: string[] }
           optionsPrice,
+          optionValueIds,
           note,
           quantity
         }
@@ -188,29 +225,6 @@ const StoreContextProvider = (props) => {
 
     return () => clearInterval(checkTokenExpiry);
   }, [token])
-
-  // Mock login for offline testing (when backend off)
-  const mockLogin = () => {
-    const fakeUser = {
-      id: 'mock-user-1',
-      name: 'Khách thử nghiệm',
-      email: 'mock@example.com'
-    };
-    setTokenWithCookie('mock-token', fakeUser);
-    alert('Đã kích hoạt đăng nhập thử (mock).');
-  };
-
-  // Auto enable mock by query param or localStorage flag
-  useEffect(() => {
-    try {
-      const url = new URL(window.location.href);
-      const qp = url.searchParams.get('mock');
-      const ls = localStorage.getItem('mock_login');
-      if ((qp === '1' || ls === '1') && !token) {
-        mockLogin();
-      }
-    } catch (e) { /* noop */ }
-  }, []);
 
   // Hàm để set token và lưu vào cookie
   const setTokenWithCookie = (newToken, userData = null) => {
@@ -464,9 +478,8 @@ const StoreContextProvider = (props) => {
     user,
     setToken: setTokenWithCookie,
     isLoggedIn,
-    logout
-    ,mockLogin
-    ,isFetchingRestaurants
+    logout,
+    isFetchingRestaurants,
   }
 
   return (
