@@ -1,13 +1,57 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './FoodOptionsModal.css';
 import { formatVND } from '../../utils/formatCurrency';
 
-const FoodOptionsModal = ({ open, onClose, item, onAdd }) => {
+const FoodOptionsModal = ({ open, onClose, item, onAdd, loading }) => {
   const [selections, setSelections] = useState({}); // { groupTitle: string[] }
   const [qty, setQty] = useState(1);
   const [note, setNote] = useState('');
 
   const groups = item?.optionGroups || [];
+  const modalRef = useRef(null);
+
+  // Initialize default selections when opening
+  useEffect(() => {
+    if (!open || !groups.length) return;
+    const initial = {};
+    groups.forEach((g) => {
+      const defaults = (g.options || []).filter(o => o.defaultSelected).map(o => o.label);
+      if (defaults.length) {
+        if (g.type === 'single') {
+          initial[g.title] = [defaults[0]];
+        } else {
+          initial[g.title] = defaults;
+        }
+      }
+    });
+    if (Object.keys(initial).length > 0) setSelections(initial);
+    // reset qty and note each open
+    setQty(1);
+    setNote('');
+  }, [open, groups]);
+
+  // Close on Escape and lock body scroll when modal is open
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    const onDocMouseDown = (e) => {
+      if (!modalRef.current) return;
+      if (!modalRef.current.contains(e.target)) {
+        onClose?.();
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
 
   const optionsPrice = useMemo(() => {
     if (!groups.length) return 0;
@@ -60,20 +104,28 @@ const FoodOptionsModal = ({ open, onClose, item, onAdd }) => {
 
   return (
     <div className="fom-overlay" onClick={onClose}>
-      <div className="fom-modal" onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} className="fom-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="fom-hero">
+          <img src={item.image} alt="" />
+          <button className="fom-close" onClick={onClose} aria-label="Đóng">×</button>
+        </div>
+
         <div className="fom-header">
-          <div className="fom-title">
-            <img src={item.image} alt="" />
-            <div>
-              <div className="fom-price">{formatVND(item.price)}</div>
-              <h3>{item.name}</h3>
+          <div className="fom-title-block">
+            <div className="fom-price">{formatVND(item.price)}</div>
+            <h3 className="fom-name">{item.name}</h3>
+            {item.description ? (
               <p className="fom-desc">{item.description}</p>
-            </div>
+            ) : null}
           </div>
-          <button className="fom-close" onClick={onClose}>×</button>
         </div>
 
         <div className="fom-body">
+          {(!groups || groups.length === 0) && (
+            <div style={{padding:'12px 4px', color:'#6b7280', fontSize:14}}>
+              {loading ? 'Đang tải tùy chọn…' : 'Món này hiện chưa có tùy chọn.'}
+            </div>
+          )}
           {groups.map((group) => {
             const isSingle = group.type === 'single';
             const sel = selections[group.title] || [];
@@ -82,12 +134,18 @@ const FoodOptionsModal = ({ open, onClose, item, onAdd }) => {
                 <div className="fom-group-header">
                   <div className="fom-group-title">{group.title}</div>
                   <div className={`fom-group-sub ${group.required ? 'required' : ''}`}>
-                    {group.required ? 'Bắt buộc • Chọn 1' : 'Tùy chọn'}
+                    {group.required
+                      ? group.type === 'multiple'
+                        ? 'Bắt buộc • Chọn nhiều'
+                        : 'Bắt buộc • Chọn 1'
+                      : group.type === 'multiple'
+                        ? 'Tùy chọn • Chọn nhiều'
+                        : 'Tùy chọn'}
                   </div>
                 </div>
                 <div className="fom-options">
                   {group.options.map((opt) => (
-                    <label key={opt.label} className="fom-option">
+                    <label key={opt.label} className={`fom-option ${isSingle ? 'is-radio' : 'is-checkbox'}`}>
                       <input
                         type={isSingle ? 'radio' : 'checkbox'}
                         name={group.title}
@@ -96,9 +154,7 @@ const FoodOptionsModal = ({ open, onClose, item, onAdd }) => {
                       />
                       <span className="fom-custom-check" aria-hidden="true" />
                       <span className="fom-option-label">{opt.label}</span>
-                      {Number(opt.priceDelta) > 0 && (
-                        <span className="fom-option-price">+ {formatVND(Number(opt.priceDelta))}</span>
-                      )}
+                      <span className="fom-option-price">+ {formatVND(Number(opt.priceDelta || 0))}</span>
                     </label>
                   ))}
                 </div>
@@ -117,10 +173,10 @@ const FoodOptionsModal = ({ open, onClose, item, onAdd }) => {
           />
         </div>
         <div className="fom-footer">
-          <div className="fom-qty">
-            <button onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
-            <span>{qty}</span>
-            <button onClick={() => setQty(q => q + 1)}>+</button>
+          <div className="fom-qty" role="group" aria-label="Số lượng">
+            <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Giảm">−</button>
+            <span aria-live="polite">{qty}</span>
+            <button onClick={() => setQty(q => q + 1)} aria-label="Tăng">+</button>
           </div>
           <button className="fom-add" onClick={handleAdd}>
             Thêm vào giỏ {formatVND(totalPrice)}

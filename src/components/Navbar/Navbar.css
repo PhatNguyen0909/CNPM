@@ -20,9 +20,8 @@
     gap: 40px;
 }
 
-.navbar button{
-    background: transparent;
-    background-color: orange;
+.navbar-right > button:not(.navbar-login-btn){
+    background:transparent;
     border-radius: 50px;
     border: none;
     font-size: 16px;
@@ -33,9 +32,23 @@
     transition: 0;
 }
 
-.navbar button:hover{
-    background-color: darkorange;
+/* Login button explicit styling to keep orange theme without bleeding globally */
+.navbar-login-btn{
+    background: #ff7a00; /* orange */
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
+.navbar-login-btn:hover{ background:#ff8c1a; }
+.navbar-login-btn:active{ transform: translateY(1px); }
+
+
 
 .navbar .active{
     padding-bottom: 2px;
@@ -74,7 +87,7 @@
     .navbar-right img{
         width: 22px;
     }
-    .navbar-right  button{
+    .navbar-right > button:not(.navbar-login-btn){
         padding: 8px 25px;
     }
 }
@@ -92,7 +105,7 @@
     .navbar-right img{
         width: 20px;
     }
-    .navbar-right  button{
+    .navbar-right > button:not(.navbar-login-btn){
         padding: 7px 20px;
         font-size: 15px;
     }
@@ -121,7 +134,7 @@
     right: 0;
     z-index: 1000;
     background-color: white;
-    min-width: 120px;
+    min-width: 150px;
     border: 1px solid #ddd;
     border-radius: 8px;
     box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
@@ -165,3 +178,4 @@
     font-size: 14px;
     color: #333;
 }
+/* Cart drawer CSS was moved to components/CartDrawer/CartDrawer.css */

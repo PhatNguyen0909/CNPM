@@ -27,13 +27,32 @@ const StoreContextProvider = (props) => {
       return;
     }
     
-    if(!cartItems[itemId]) {
-      setCartItems ((prev)=>({...prev,[itemId]:1}))
+    const item = foods.find(f => f._id === itemId);
+    if (!item) return;
+
+    // determine existing restaurant ids in cart
+    const existingRestIds = new Set();
+    for (const id in cartItems) {
+      if (cartItems[id] > 0) {
+        const p = foods.find(f => String(f._id) === String(id));
+        if (p && p.restaurantId) existingRestIds.add(String(p.restaurantId));
+      }
     }
-    else
-    {
-      setCartItems ((prev)=>({...prev,[itemId]:prev[itemId]+1}))
+    for (const line of cartLines) {
+      const p = foods.find(f => String(f._id) === String(line.itemId));
+      if (p && p.restaurantId) existingRestIds.add(String(p.restaurantId));
     }
+
+    const newRestId = String(item.restaurantId ?? '');
+    if (existingRestIds.size > 0 && !existingRestIds.has(newRestId)) {
+      const keep = window.confirm('Giỏ hàng hiện có món từ nhà hàng khác. Bạn có muốn đổi nhà hàng và xóa giỏ hàng hiện tại không?');
+      if (!keep) return; // user cancelled: do nothing
+      // user accepted: clear existing cart
+      setCartItems({});
+      setCartLines([]);
+    }
+
+    setCartItems((prev) => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
   }
   const removeFromCart = (itemId) => {
     if (!token) {
@@ -58,13 +77,32 @@ const StoreContextProvider = (props) => {
 
   // Compute options price from item definition and selections
   const computeOptionsPrice = (item, selectionsObj) => {
-    const groups = item_options?.[item?._id] || [];
+    // Prefer backend-defined option groups if present
+    const srcGroups = item?.optionResponses || item?.raw?.optionResponses;
+    let groups = [];
+    if (Array.isArray(srcGroups) && srcGroups.length > 0) {
+      groups = srcGroups.map((group) => {
+        const title = String(
+          group?.name ?? group?.optionName ?? group?.groupName ?? group?.title ?? 'Tùy chọn'
+        );
+        const values = group?.optionValues || group?.optionValueResponses || group?.values || [];
+        const options = (Array.isArray(values) ? values : []).map((v) => ({
+          label: String(v?.name ?? v?.optionValueName ?? v?.valueName ?? v?.label ?? ''),
+          priceDelta: Number(v?.extraPrice ?? v?.priceDelta ?? 0) || 0,
+        }));
+        return { title, options };
+      });
+    } else {
+      // Fallback to static option config
+      groups = item_options?.[item?._id] || [];
+    }
+
     if (!Array.isArray(groups) || groups.length === 0) return 0;
     let extra = 0;
     groups.forEach(group => {
       const chosen = selectionsObj?.[group.title] || [];
       chosen.forEach(label => {
-        const opt = group.options.find(o => o.label === label);
+        const opt = (group.options || []).find(o => o.label === label);
         if (opt) extra += Number(opt.priceDelta || 0);
       });
     });
@@ -119,6 +157,26 @@ const StoreContextProvider = (props) => {
     const key = generateLineKey(itemId, selectionsObj, note);
     const optionsPrice = computeOptionsPrice(item, selectionsObj);
     const optionValueIds = mapOptionValueIds(item, selectionsObj);
+
+    // check existing restaurants in cart
+    const existingRestIds = new Set();
+    for (const id in cartItems) {
+      if (cartItems[id] > 0) {
+        const p = foods.find(f => String(f._id) === String(id));
+        if (p && p.restaurantId) existingRestIds.add(String(p.restaurantId));
+      }
+    }
+    for (const line of cartLines) {
+      const p = foods.find(f => String(f._id) === String(line.itemId));
+      if (p && p.restaurantId) existingRestIds.add(String(p.restaurantId));
+    }
+    const newRestId = String(item.restaurantId ?? '');
+    if (existingRestIds.size > 0 && !existingRestIds.has(newRestId)) {
+      const keep = window.confirm('Giỏ hàng hiện có món từ nhà hàng khác. Bạn có muốn đổi nhà hàng và xóa giỏ hàng hiện tại không?');
+      if (!keep) return; // abort
+      setCartItems({});
+      setCartLines([]);
+    }
 
     setCartLines(prev => {
       const idx = prev.findIndex(l => l.key === key);
