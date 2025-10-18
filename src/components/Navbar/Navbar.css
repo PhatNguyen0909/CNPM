@@ -20,7 +20,7 @@
     gap: 40px;
 }
 
-.navbar-login-btn{
+.navbar button{
     background: transparent;
     background-color: orange;
     border-radius: 50px;
@@ -33,7 +33,7 @@
     transition: 0;
 }
 
-.navbar-login-btn:hover{
+.navbar button:hover{
     background-color: darkorange;
 }
 
@@ -48,18 +48,6 @@
 
 .navbar-search-icon{
     position: relative;
-}
-
-.navbar-cart-btn{
-    border: none;
-    background: transparent;
-    padding: 0;
-    display: flex;
-    cursor: pointer;
-}
-
-.navbar-cart-btn img{
-    display: block;
 }
 
 .navbar-search-icon .dot{
