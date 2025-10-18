@@ -2,15 +2,44 @@ import React, { useContext, useState, useRef } from 'react'
 import './Navbar.css'
 import { assets } from '../../assets/assets'
 import SearchBar from '../SearchBar/SearchBar'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { StoreContext } from '../../context/StoreContext';
+import CartReview from '../CartReview/CartReview';
 
 const Navbar = ({setShowLogin}) => {
 
   const[menu, setMenu] = useState("home");
   const[showDropdown, setShowDropdown] = useState(false);
-  const{getTotalCartAmount, token, user, logout} = useContext(StoreContext);
+  const [showCartReview, setShowCartReview] = useState(false);
+  const{
+    getTotalCartAmount,
+    cartItems,
+    cartLines,
+    food_list,
+    addToCart,
+    removeFromCart,
+    updateCartLineQty,
+    removeCartLine,
+    clearCart,
+    token,
+    user,
+    logout
+  } = useContext(StoreContext);
   const timeoutRef = useRef(null);
+  const navigate = useNavigate();
+
+  const handleCartIconClick = () => {
+    setShowCartReview(true);
+  };
+
+  const handleCheckout = () => {
+    setShowCartReview(false);
+    navigate('/cart');
+  };
+
+  const handleCloseCartReview = () => {
+    setShowCartReview(false);
+  };
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) {
@@ -33,12 +62,14 @@ const Navbar = ({setShowLogin}) => {
       <div className="navbar-right">
         <img src ={assets.search_icon} alt= " "/>
         <div className="navbar-search-icon">
-           <Link to='/cart'> <img src = {assets.basket_icon} alt = " "/></Link>
+           <button type="button" className="navbar-cart-btn" onClick={handleCartIconClick}>
+            <img src = {assets.basket_icon} alt = "Giỏ hàng"/>
+           </button>
             <div className={getTotalCartAmount()===0?"":"dot"}>
             </div>
         </div>
         {!token ? (
-          <button onClick={()=>setShowLogin(true)}>Đăng nhập</button>
+          <button className="navbar-login-btn" onClick={()=>setShowLogin(true)}>Đăng nhập</button>
         ) : (
           <div 
             className='navbar-profile'
@@ -61,6 +92,21 @@ const Navbar = ({setShowLogin}) => {
           </div>
         )}
       </div>
+      <CartReview
+        open={showCartReview}
+        onClose={handleCloseCartReview}
+        cartItems={cartItems}
+        cartLines={cartLines}
+        foodList={food_list}
+        addToCart={addToCart}
+        removeFromCart={removeFromCart}
+        updateCartLineQty={updateCartLineQty}
+        removeCartLine={removeCartLine}
+        clearCart={clearCart}
+        onCheckout={handleCheckout}
+        totalAmount={getTotalCartAmount()}
+        token={token}
+      />
     </div>
   )
 }
