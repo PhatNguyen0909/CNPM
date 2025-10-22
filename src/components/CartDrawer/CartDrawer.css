@@ -123,6 +123,9 @@
     flex-direction:column;
     align-items:center;
     gap:8px;
+    /* contain the absolute-positioned trash icon when showing pending-delete */
+    position: relative;
+    min-width: 84px;
 }
 .qty-controls{
     display:flex;
@@ -159,8 +162,39 @@
 .trash-btn{
     background:transparent;
     border:none;
-    font-size:18px;
+    font-size:50vw;
     cursor:pointer;
+}
+
+/* When an item is flagged for pending delete (quantity reached 0 but not yet confirmed),
+   hide the numeric qty and show the trash icon overlayed at the qty position. */
+.cart-drawer-item.pending-delete .qty-display{
+    visibility: hidden;
+}
+.cart-drawer-item.pending-delete .trash-btn{
+    /* center the trash icon where the qty used to be */
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    z-index: 2;
+}
+
+/* make the trash icon red for pending deletions */
+.cart-drawer-item.pending-delete .trash-btn{
+    color: #ef4444; /* red */
+}
+
+/* hide plus/minus buttons when pending-delete to avoid confusing controls */
+.cart-drawer-item.pending-delete .qty-controls .qty-btn{
+    visibility: hidden;
+}
+
+/* keep the qty-display space so layout doesn't jump; we hide numeric only (already done)
+   but ensure the trash icon sits above the hidden controls */
+.cart-drawer-item.pending-delete .qty-controls{
+    position: relative;
 }
 
 /* Animations for smoother open/close */

@@ -29,6 +29,10 @@ const Navbar = ({setShowLogin}) => {
     setTimeout(() => {
       setShowCartDrawer(false);
       setClosingDrawer(false);
+      // clear pending delete flags when drawer fully closed so quantities
+      // return to their original values when reopened
+      setPendingDeleteLines([]);
+      setPendingDeleteItems([]);
     }, 350);
   };
 
@@ -102,7 +106,7 @@ const Navbar = ({setShowLogin}) => {
               <div className="cart-drawer-body">
                 <div className="cart-items-list">
                   {Array.isArray(cartLines) && cartLines.length > 0 && cartLines.map(line => (
-                    <div className="cart-drawer-item" key={line.key}>
+                    <div className={`cart-drawer-item ${pendingDeleteLines.includes(line.key)? 'pending-delete':''}`} key={line.key}>
                       <img className="cart-item-thumb" src={line.image} alt={line.name} />
                       <div className="cart-item-main">
                         <div className="item-name">{line.name}</div>
@@ -118,7 +122,7 @@ const Navbar = ({setShowLogin}) => {
                           <button className="qty-btn" onClick={() => updateCartLineQty(line.key, Number(line.quantity) + 1)}><img src={assets.plus} alt="" /></button>
                         </div>
                         {pendingDeleteLines.includes(line.key) ? (
-                          <button className="trash-btn" onClick={() => { removeCartLine(line.key); setPendingDeleteLines(prev => prev.filter(k => k !== line.key)); }}>🗑</button>
+                          <button className="trash-btn" onClick={() => { removeCartLine(line.key); setPendingDeleteLines(prev => prev.filter(k => k !== line.key)); }}><img src={assets.trash} alt="Xóa" /></button>
                         ) : null}
                       </div>
                     </div>
@@ -130,7 +134,7 @@ const Navbar = ({setShowLogin}) => {
                     const image = product?.image || '';
                     const price = product ? (Number(product.price) * qty) : 0;
                     return (
-                      <div className="cart-drawer-item" key={id}>
+                      <div className={`cart-drawer-item ${pendingDeleteItems.includes(id)? 'pending-delete':''}`} key={id}>
                         <img className="cart-item-thumb" src={image} alt={name} />
                         <div className="cart-item-main">
                           <div className="item-name">{name}</div>
