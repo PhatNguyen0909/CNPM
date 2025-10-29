@@ -4,6 +4,7 @@ import { StoreContext } from '../../context/StoreContext'
 import { useNavigate } from 'react-router-dom'
 import ProtectedRoute from '../../components/ProtectedRoute/ProtectedRoute'
 import orderAPI from '../../services/orderAPI'
+import { attachToken } from '../../services/apiClient'
 
 const PlaceOrder = () => {
 
@@ -87,7 +88,7 @@ const PlaceOrder = () => {
       return String(candidate).trim();
     };
 
-    const orderItems = [];
+  const orderItems = [];
 
     Object.entries(cartItems || {}).forEach(([itemId, qty]) => {
       if (!qty) return;
@@ -100,7 +101,8 @@ const PlaceOrder = () => {
       orderItems.push({
         menuItemId,
         quantity: numericQty,
-        listOptionValueId: [],
+        note: '',
+        optionValueIds: [],
       });
     });
 
@@ -115,7 +117,8 @@ const PlaceOrder = () => {
       orderItems.push({
         menuItemId,
         quantity: numericQty,
-        listOptionValueId: optionIds,
+        note: line.note || '',
+        optionValueIds: optionIds,
       });
     });
 
@@ -150,11 +153,13 @@ const PlaceOrder = () => {
       phone: data.phone.trim(),
       note: [data.note.trim(), ...lineNotes].filter(Boolean).join(' | '),
       deliveryAddress,
-      listItems: orderItems,
+      cartItems: orderItems,
     };
 
     try {
       setSubmitting(true);
+      // Ensure Authorization header is present on this critical call
+      if (token) attachToken(token);
       const response = await orderAPI.createOrder(payload);
       const message = response?.message ?? 'Đặt hàng thành công! Cảm ơn bạn đã sử dụng dịch vụ.';
       alert(message);
@@ -162,8 +167,14 @@ const PlaceOrder = () => {
       navigate('/');
     } catch (error) {
       console.error('Không thể tạo đơn hàng:', error);
+      const status = error?.response?.status;
       const message = error?.response?.data?.message ?? error?.message ?? 'Không thể tạo đơn hàng. Vui lòng thử lại.';
-      setSubmitError(message);
+      if (status === 401 || status === 403) {
+        setSubmitError('Phiên đăng nhập đã hết hạn hoặc thiếu quyền (Authentication is required). Vui lòng đăng nhập lại.');
+        setTimeout(() => navigate('/login'), 800);
+      } else {
+        setSubmitError(message);
+      }
     } finally {
       setSubmitting(false);
     }

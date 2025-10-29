@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
 import './FoodItem.css'
 import { assets } from '../../assets/assets'
 import { StoreContext } from '../../context/StoreContext'
@@ -15,11 +15,12 @@ const FoodItem = ({id,restaurantId,name,price,description,image, variant}) => {
 
   const itemDef = useMemo(() => food_list.find(f => f._id === id), [food_list, id]);
 
-  // Normalize backend optionResponses -> optionGroups expected by modal
+  // Normalize backend options/optionResponses -> optionGroups expected by modal
   const optionGroupsFromAPI = useMemo(() => {
     const base = remoteItem || itemDef;
     if (!base) return [];
-    const src = base.optionResponses || base.raw?.optionResponses;
+    // Support both shapes: { options: [...] } or { optionResponses: [...] }
+    const src = base.options || base.optionResponses || base.raw?.optionResponses;
     if (!Array.isArray(src) || src.length === 0) return [];
   return src.map((group) => {
       const title = String(
@@ -46,21 +47,10 @@ const FoodItem = ({id,restaurantId,name,price,description,image, variant}) => {
         }));
       return { title, required, type, options };
     });
-  }, [itemDef]);
+  }, [itemDef, remoteItem]);
 
   // Fallback to static item_options only when API has no options
   const optionGroups = optionGroupsFromAPI.length > 0 ? optionGroupsFromAPI : (item_options?.[id] || []);
-  const hasOptions = optionGroups.length > 0;
-  
-  const decideHasOptions = (base) => {
-    if (!base) return false;
-    const src = base.optionResponses || base.raw?.optionResponses;
-    if (Array.isArray(src) && src.some(g => (g?.optionValues || g?.optionValueResponses || g?.values || []).length > 0)) {
-      return true;
-    }
-    // fallback to static
-    return (item_options?.[id] || []).length > 0;
-  }
   
   const handleOpenOrAdd = async (e) => {
     if (e) e.stopPropagation();
@@ -72,23 +62,16 @@ const FoodItem = ({id,restaurantId,name,price,description,image, variant}) => {
     setOpen(true);
 
     // Try to fetch latest item to populate options
-    let latest = itemDef;
-    if (restaurantId) {
-      const controller = new AbortController();
-      try {
-        setLoadingItem(true);
-        const list = await menuAPI.fetchMenuItemsByMerchant(restaurantId, controller.signal);
-        const found = (Array.isArray(list) ? list : []).find((it) => {
-          const cand = it?._id ?? it?.id ?? it?.itemId ?? it?.menuItemId;
-          return String(cand) === String(id);
-        });
-        if (found) latest = found;
-        setRemoteItem(found || null);
-      } catch (err) {
-        // ignore and use fallback
-      } finally {
-        setLoadingItem(false);
-      }
+    const controller = new AbortController();
+    try {
+      setLoadingItem(true);
+      // Use menu item detail API: GET /menu-items/{menuItemId}
+      const item = await menuAPI.fetchMenuItemById(id, controller.signal);
+      setRemoteItem(item || null);
+    } catch (err) {
+      // ignore and use fallback
+    } finally {
+      setLoadingItem(false);
     }
     // Modal remains open; options will populate if available
   }
@@ -127,7 +110,7 @@ const FoodItem = ({id,restaurantId,name,price,description,image, variant}) => {
           open={open}
           onClose={() => setOpen(false)}
           item={{ _id: id, name, price, description, image, optionGroups }}
-          onAdd={(selections, qty, note) => addToCartWithOptions(id, selections, qty, note)}
+          onAdd={(selections, qty, note, usedGroups) => addToCartWithOptions(id, selections, qty, note, usedGroups)}
           loading={loadingItem}
         />
     </div>

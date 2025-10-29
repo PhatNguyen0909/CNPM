@@ -203,13 +203,13 @@ const Navbar = ({setShowLogin}) => {
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
-                <li onClick={logout}>
+                <li onClick={() => { logout(); navigate('/'); }}>
                   <img src={assets.logout_icon} alt="" />
-                  <p>Đăng xuất</p>
+                  <p style={{margin:0}}>Đăng xuất</p>
                 </li>
                 <li>
-                  <img src={assets.track_order} alt="" />
-                  <p>Theo dõi đơn hàng</p>
+                    <img src={assets.track_order} alt="" />
+                    <Link to="/track-order">Theo dõi đơn hàng</Link>
                 </li>
               </ul>
             )}

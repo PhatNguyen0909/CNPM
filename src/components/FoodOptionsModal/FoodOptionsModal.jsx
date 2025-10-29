@@ -96,7 +96,9 @@ const FoodOptionsModal = ({ open, onClose, item, onAdd, loading }) => {
       alert('Vui lòng chọn đầy đủ các mục bắt buộc');
       return;
     }
-    onAdd(selections, qty, note.trim());
+    // Pass back the concrete option groups the user interacted with,
+    // so the caller can map labels -> optionValueIds reliably
+    onAdd(selections, qty, note.trim(), groups);
     onClose();
   };
 
