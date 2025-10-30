@@ -3,6 +3,7 @@ import { restaurant_list as staticRestaurants, food_list as staticFoodList } fro
 import { item_options } from "../assets/itemOptions";
 import { getCookie, setCookie, deleteCookie } from "../utils/cookieUtils";
 import restaurantAPI from "../services/restaurantAPI";
+import cartAPI from "../services/cartAPI";
 import { attachToken } from "../services/apiClient";
 
 // Tạo context
@@ -20,8 +21,32 @@ const StoreContextProvider = (props) => {
   const [foods, setFoods] = useState(staticFoodList || []);
   const foodsRef = useRef(staticFoodList || []);
 
+  // Build current cart payload that backend expects for /cart validation
+  function buildBackendCartItems() {
+    const items = [];
+    // legacy items
+    Object.entries(cartItems || {}).forEach(([id, qty]) => {
+      const n = Number(qty);
+      if (!Number.isFinite(n) || n <= 0) return;
+      const item = foods.find(f => String(f._id) === String(id));
+      if (!item) return;
+      const raw = item.raw || {};
+      const menuItemId = raw.id ?? raw.menuItemId ?? item._id;
+      items.push({ menuItemId, quantity: n, note: '', optionValueIds: [] });
+    });
+    // configurable lines
+    (cartLines || []).forEach(line => {
+      if (!line || !line.quantity) return;
+      const item = foods.find(f => String(f._id) === String(line.itemId));
+      const raw = item?.raw || {};
+      const menuItemId = raw.id ?? raw.menuItemId ?? line.itemId;
+      items.push({ menuItemId, quantity: Number(line.quantity) || 1, note: line.note || '', optionValueIds: Array.isArray(line.optionValueIds) ? line.optionValueIds : [] });
+    });
+    return items;
+  }
+
   // Hàm thêm vào giỏ hàng với kiểm tra đăng nhập
-  const addToCart = (itemId) => {
+  const addToCart = async (itemId) => {
     if (!token) {
       alert("Vui lòng đăng nhập để thêm món ăn vào giỏ hàng!");
       return;
@@ -29,6 +54,20 @@ const StoreContextProvider = (props) => {
     
     const item = foods.find(f => f._id === itemId);
     if (!item) return;
+
+    // Validate with backend to ensure same-merchant cart
+    try {
+      const raw = item.raw || {};
+      const menuItemId = raw.id ?? raw.menuItemId ?? item._id;
+      const payload = buildBackendCartItems();
+      const result = await cartAPI.validateWhenAdding(menuItemId, payload);
+      if (!result.ok) {
+        const keep = window.confirm((result.error || 'Giỏ hàng không hợp lệ.') + '\nBạn có muốn xóa giỏ hàng hiện tại để thêm món này?');
+        if (!keep) return;
+        setCartItems({});
+        setCartLines([]);
+      }
+    } catch { /* ignore */ }
 
     // determine existing restaurant ids in cart
     const existingRestIds = new Set();
@@ -78,14 +117,14 @@ const StoreContextProvider = (props) => {
   // Compute options price from item definition and selections
   const computeOptionsPrice = (item, selectionsObj) => {
     // Prefer backend-defined option groups if present
-    const srcGroups = item?.optionResponses || item?.raw?.optionResponses;
+    const srcGroups = item?.options || item?.optionResponses || item?.raw?.options || item?.raw?.optionResponses;
     let groups = [];
     if (Array.isArray(srcGroups) && srcGroups.length > 0) {
       groups = srcGroups.map((group) => {
         const title = String(
           group?.name ?? group?.optionName ?? group?.groupName ?? group?.title ?? 'Tùy chọn'
         );
-        const values = group?.optionValues || group?.optionValueResponses || group?.values || [];
+        const values = group?.optionValues || group?.optionValueResponses || group?.values || group?.options || [];
         const options = (Array.isArray(values) ? values : []).map((v) => ({
           label: String(v?.name ?? v?.optionValueName ?? v?.valueName ?? v?.label ?? ''),
           priceDelta: Number(v?.extraPrice ?? v?.priceDelta ?? 0) || 0,
@@ -108,6 +147,8 @@ const StoreContextProvider = (props) => {
     });
     return extra;
   };
+
+  
 
   const mapOptionValueIds = (item, selectionsObj) => {
     if (!item || !selectionsObj) return [];
@@ -138,25 +179,68 @@ const StoreContextProvider = (props) => {
       return ids;
     };
 
-    const normalizedIds = collectIds(item.optionResponses);
-    if (normalizedIds.length > 0) return normalizedIds;
+    // Prefer 'options' shape first, then 'optionResponses', finally raw fallbacks
+    const fromOptions = collectIds(item.options);
+    if (fromOptions.length > 0) return fromOptions;
+    const fromResponses = collectIds(item.optionResponses);
+    if (fromResponses.length > 0) return fromResponses;
     if (item.raw) {
+      const rawFromOptions = collectIds(item.raw.options);
+      if (rawFromOptions.length > 0) return rawFromOptions;
       return collectIds(item.raw.optionResponses);
     }
     return [];
   };
 
   // Add item with options into cartLines
-  const addToCartWithOptions = (itemId, selectionsObj, quantity = 1, note = '') => {
+  const addToCartWithOptions = async (itemId, selectionsObj, quantity = 1, note = '', usedGroups = null) => {
     if (!token) {
       alert("Vui lòng đăng nhập để thêm món ăn vào giỏ hàng!");
       return;
     }
   const item = foods.find(f => f._id === itemId);
     if (!item) return;
+
+    // Validate with backend first
+    try {
+      const raw = item.raw || {};
+      const menuItemId = raw.id ?? raw.menuItemId ?? item._id;
+      const payload = buildBackendCartItems();
+      const result = await cartAPI.validateWhenAdding(menuItemId, payload);
+      if (!result.ok) {
+        const keep = window.confirm((result.error || 'Giỏ hàng không hợp lệ.') + '\nBạn có muốn xóa giỏ hàng hiện tại để thêm món này?');
+        if (!keep) return;
+        setCartItems({});
+        setCartLines([]);
+      }
+    } catch { /* ignore */ }
     const key = generateLineKey(itemId, selectionsObj, note);
     const optionsPrice = computeOptionsPrice(item, selectionsObj);
-    const optionValueIds = mapOptionValueIds(item, selectionsObj);
+    // Prefer the groups from modal (usedGroups) to map labels -> ids reliably
+    const optionValueIds = Array.isArray(usedGroups) && usedGroups.length
+      ? (function mapFromUsed() {
+          const norm = (v) => String(v ?? '').trim().toLowerCase();
+          const desiredByGroup = Object.entries(selectionsObj || {}).reduce((acc, [g, vals]) => {
+            acc[norm(g)] = (vals || []).map(norm);
+            return acc;
+          }, {});
+          const ids = [];
+          usedGroups.forEach((g) => {
+            const gTitle = norm(g.title);
+            const desired = desiredByGroup[gTitle];
+            if (!desired || !desired.length) return;
+            const values = g.options || g.optionValues || g.optionValueResponses || g.values || [];
+            values.forEach((v) => {
+              const label = norm(v?.label ?? v?.name ?? v?.optionValueName ?? v?.valueName);
+              if (desired.includes(label)) {
+                const id = v?.id ?? v?._id ?? v?.optionValueId ?? v?.valueId;
+                if (id !== undefined && id !== null) ids.push(id);
+              }
+            });
+          });
+          return ids;
+        })()
+      : mapOptionValueIds(item, selectionsObj);
 
     // check existing restaurants in cart
     const existingRestIds = new Set();

@@ -29,7 +29,7 @@ const normalizeAuthResponse = (response, fallback = {}) => {
 
 const userAPI = {
   login: async (payload) => {
-    const res = await apiClient.post("/auth/login", payload);
+    const res = await apiClient.post("/auth/log-in", payload);
     return normalizeAuthResponse(res, { email: payload?.email });
   },
   register: async (payload) => {
@@ -42,7 +42,7 @@ const userAPI = {
       password: payload?.password,
     };
 
-    const res = await apiClient.post("/auth/signup", body);
+    const res = await apiClient.post("/auth/sign-up", body);
     return normalizeAuthResponse(res, { email: body.email, name: body.name });
   },
 };

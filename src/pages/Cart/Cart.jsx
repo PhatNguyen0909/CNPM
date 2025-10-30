@@ -3,6 +3,7 @@ import './Cart.css'
 import { StoreContext } from '../../context/StoreContext'
 import { useNavigate } from 'react-router-dom'
 import { formatVND } from '../../utils/formatCurrency'
+import { assets } from '../../assets/assets'
 
 const Cart = () => {
   const{cartItems,cartLines,food_list,removeFromCart,removeCartLine,updateCartLineQty,getTotalCartAmount,token,user} = useContext(StoreContext);
@@ -83,13 +84,13 @@ const Cart = () => {
                 )}
               </p>
               <p>{formatVND(Number(line.basePrice) + Number(line.optionsPrice||0))}</p>
-              <p>
-                <span style={{marginRight:8}} onClick={() => updateCartLineQty(line.key, line.quantity - 1)}>-</span>
+              <p className='edit-quantity'>
+                <span style={{marginRight:8}} onClick={() => updateCartLineQty(line.key, line.quantity - 1)}><img className='icon' src={assets.minus} alt="" /></span>
                 {line.quantity}
-                <span style={{marginLeft:8}} onClick={() => updateCartLineQty(line.key, line.quantity + 1)}>+</span>
+                <span style={{marginLeft:8}} onClick={() => updateCartLineQty(line.key, line.quantity + 1)}><img className='icon' src={assets.plus} alt="" /></span>
               </p>
-              <p>{formatVND((Number(line.basePrice)+Number(line.optionsPrice||0))*Number(line.quantity))}</p>
-              <p onClick={()=>removeCartLine(line.key)} className='cross'>x</p>
+              <p >{formatVND((Number(line.basePrice)+Number(line.optionsPrice||0))*Number(line.quantity))}</p>
+              <p onClick={()=>removeCartLine(line.key)} className='cross'><img src={assets.cross} alt="" /></p>
             </div>
             <hr />
           </>

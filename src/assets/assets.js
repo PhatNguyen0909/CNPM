@@ -65,6 +65,7 @@ import track_order from './track_order.png'
 import plus from './plus.png'
 import minus from './minus.png'
 import trash from './trash.png'
+import cross from './cross.png'
 
 export const assets = {
     logo,
@@ -91,7 +92,8 @@ export const assets = {
     track_order,
     plus,
     minus,
-    trash
+    trash,
+    cross
 }
 
 export const menu_list = [

@@ -20,8 +20,9 @@
     background-color: #e2e2e2;
     border: none;
 }
-.cart-items-item .cross{
+.cart-items-item .cross img{
 cursor: pointer;
+max-width: 30px;
 }
 .cart-bottom{
     margin-top: 80px;
@@ -103,4 +104,15 @@ cursor: pointer;
 
 .cart-empty p {
     font-size: 16px;
+}
+.icon{
+    max-width: 12px;
+    cursor: pointer;
+
+}
+.edit-quantity{
+    margin-left: 10px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
