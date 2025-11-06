@@ -110,12 +110,18 @@
     margin-bottom:6px;
 }
 .item-meta{
-    color:#6b7280;
+    color:#e77866;
     font-size:14px;
+}
+.item-sub{
+    color:#6b7280;
+    font-size:12px;
+    margin-top:2px;
+    margin-bottom:4px;
 }
 .item-qty{
     font-weight:700;
-    color:#111827;
+    color:#271311;
 }
 
 .item-controls{

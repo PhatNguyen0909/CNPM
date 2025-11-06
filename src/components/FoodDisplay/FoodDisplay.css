@@ -9,7 +9,7 @@
 .section-title{ font-size: 22px; font-weight:700; margin: 18px 0 10px; }
 .food-display-list{
     display: grid;
-    grid-template-columns: repeat(auto-fill,minmax(240px,1fr));
+    grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
     margin-top: 30px;
     gap: 30px;
     row-gap: 50px;
@@ -74,9 +74,9 @@
 }
 
 /* Restaurant header */
-.restaurant-header{ display:flex; gap:24px; align-items:flex-start; margin-bottom:24px; }
+.restaurant-header{ position:relative; display:flex; gap:24px; align-items:flex-start; margin-bottom:24px; }
 .rh-left{ flex:0 0 360px; }
-.rh-image{ width:100%; height:220px; object-fit:cover; border-radius:12px; }
+.rh-image{ width:100%; height:220px; object-fit:cover; border-radius:20px; }
 .rh-right{ flex:1; min-width:0; }
 .rh-top-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .rh-name-wrap{ display:flex; align-items:center; gap:10px; }
@@ -101,6 +101,9 @@
 .rh-hours-summary{ font-size:13px; color:#374151; }
 .rh-tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .rh-tag{ color:#6b7280; font-size:14px; }
+
+/* Back button pinned to top-left of header */
+
 
 .rest-info-modal{ position:fixed; inset:0; z-index:50; display:flex; justify-content:center; align-items:flex-start; padding:60px 20px; pointer-events:none; }
 .rest-info-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,0.45); pointer-events:auto; }
@@ -128,4 +131,17 @@
     .rh-left{ width:100%; flex:0 0 auto; }
     .rh-image{ height:180px; }
     .rh-name{ font-size:26px; }
+}
+.Back-btn{
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    width: 45px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
 }

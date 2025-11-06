@@ -3,6 +3,8 @@ import { restaurant_list as staticRestaurants, food_list as staticFoodList } fro
 import { item_options } from "../assets/itemOptions";
 import { getCookie, setCookie, deleteCookie } from "../utils/cookieUtils";
 import restaurantAPI from "../services/restaurantAPI";
+import menuAPI from "../services/menuAPI";
+import { API_BASE_URL } from "../services/apiClient";
 import cartAPI from "../services/cartAPI";
 import { attachToken } from "../services/apiClient";
 
@@ -393,6 +395,29 @@ const StoreContextProvider = (props) => {
   const normalizeRestaurant = (item, index = 0) => {
     if (!item || typeof item !== "object") return null;
     const fallback = staticRestaurants?.[index % (staticRestaurants?.length || 1)] ?? {};
+    const toAbsoluteUrl = (u) => {
+      if (!u) return undefined;
+      const url = String(u).trim();
+      if (!url) return undefined;
+      // already absolute or data URL
+      if (/^https?:\/\//i.test(url) || url.startsWith('data:')) return url;
+      // root-relative path is fine
+      if (url.startsWith('/')) return url;
+      // otherwise prefix API base (e.g., /potato-api)
+      return `${API_BASE_URL.replace(/\/$/, '')}/${url}`;
+    };
+    const pickFirst = (arr) => {
+      if (!Array.isArray(arr) || arr.length === 0) return undefined;
+      const v = arr[0];
+      if (typeof v === 'string') return v;
+      if (typeof v === 'object') {
+        return (
+          v.imageUrl 
+          (Array.isArray(v.urls) ? v.urls[0] : undefined)
+        );
+      }
+      return undefined;
+    };
     const normalizeOpeningHours = (value, fallbackValue) => {
       const input = value ?? fallbackValue;
       if (!input) return { list: [], summary: "" };
@@ -479,12 +504,18 @@ const StoreContextProvider = (props) => {
       fallback._id ??
       `${Date.now()}-${index}`;
 
-    const image =
-      item.imageUrl ??
-      item.logoUrl ??
-      item.coverImage ??
-      item.image ??
+    const rawImage =
+      item.imageUrl ?? item.imageURL ??
+      item.logoUrl ?? item.logoURL ?? item.logo ??
+      item.coverImage ?? item.coverImageUrl ?? item.cover ?? item.banner ?? item.bannerUrl ??
+      item.avatar ?? item.avatarUrl ??
+      item.picture ?? item.pictureUrl ??
+      item.photo ?? item.photoUrl ??
+      item.thumbnail ?? item.thumbnailUrl ??
+      item.image ?? item.img ?? item.imgUrl ?? item.image_path ?? item.imagePath ??
+      pickFirst(item.images) ?? pickFirst(item.media) ??
       fallback.image;
+    const image = toAbsoluteUrl(rawImage);
 
     const ratingRaw =
       item.avgRating ??
@@ -529,11 +560,18 @@ const StoreContextProvider = (props) => {
       fallback.openingHours
     );
 
+    const numericRating = Number.isFinite(Number(ratingRaw)) ? Number(Number(ratingRaw).toFixed(1)) : Number(fallback.rating ?? 0);
+
     return {
       _id: String(id),
       name: item.name ?? item.merchantName ?? fallback.name ?? "Nhà hàng",
       image,
-      rating: Number.isFinite(Number(ratingRaw)) ? Number(Number(ratingRaw).toFixed(1)) : Number(fallback.rating ?? 0),
+      open: Boolean(
+        (item.open ?? item.isOpen ?? item.openNow ?? item.is_open) ??
+        ((item.status === 'OPEN') || (item.status === 'ACTIVE'))
+      ),
+      rating: numericRating,
+      avgRating: numericRating,
       ratingCount: Number(ratingCount) || 0,
       description: item.introduction ?? item.description ?? item.shortDescription ?? fallback.description ?? "",
       address,
@@ -622,6 +660,51 @@ const StoreContextProvider = (props) => {
     isLoggedIn,
     logout,
     isFetchingRestaurants,
+    validateCartVisibility: async () => {
+      // Re-fetch each menu item to ensure it's still visible/active before checkout.
+      const invalid = [];
+      const invalidEntries = [];
+      const tasks = [];
+      const pushCheck = (menuItemId, displayName, removalInfo) => {
+        tasks.push(
+          (async () => {
+            try {
+              const res = await menuAPI.fetchMenuItemById(menuItemId);
+              const status = String(res?.status ?? res?.itemStatus ?? '').toUpperCase();
+              const visible = res?.visible ?? res?.isVisible ?? res?.active ?? res?.isActive;
+              const isActiveStatus = !status || status === 'ACTIVE';
+              const isVisible = visible === undefined ? true : Boolean(visible);
+              if (!(isActiveStatus && isVisible)) {
+                invalid.push(displayName || String(menuItemId));
+                invalidEntries.push({ name: displayName || String(menuItemId), ...removalInfo });
+              }
+            } catch {
+              // If cannot load item, treat as invalid to be safe
+              invalid.push(displayName || String(menuItemId));
+              invalidEntries.push({ name: displayName || String(menuItemId), ...removalInfo });
+            }
+          })()
+        );
+      };
+
+      // from legacy cartItems
+      Object.entries(cartItems || {}).forEach(([id, qty]) => {
+        if (!qty || qty <= 0) return;
+        const item = foods.find(f => String(f._id) === String(id));
+        if (!item) return;
+        const raw = item.raw || {};
+        const menuItemId = raw.id ?? raw.menuItemId ?? item._id;
+        pushCheck(menuItemId, item.name, { type: 'item', itemId: item._id });
+      });
+      // from configurable cartLines
+      (cartLines || []).forEach(line => {
+        if (!line || !line.itemId) return;
+        pushCheck(line.itemId, line.name, { type: 'line', key: line.key });
+      });
+
+      await Promise.all(tasks);
+      return { ok: invalid.length === 0, invalid, invalidEntries };
+    },
   }
 
   return (

@@ -11,7 +11,7 @@ const Navbar = ({setShowLogin}) => {
 
   const[menu, setMenu] = useState("home");
   const[showDropdown, setShowDropdown] = useState(false);
-  const{getTotalCartAmount, token, user, logout, cartLines, cartItems, food_list, addToCart, removeFromCart, updateCartLineQty, removeCartLine, setCartItems, restaurant_list, clearCart} = useContext(StoreContext);
+  const{getTotalCartAmount, token, user, logout, cartLines, cartItems, food_list, addToCart, removeFromCart, updateCartLineQty, removeCartLine, setCartItems, restaurant_list, clearCart, validateCartVisibility} = useContext(StoreContext);
   const timeoutRef = useRef(null);
   const navigate = useNavigate();
   const [showCartDrawer, setShowCartDrawer] = useState(false);
@@ -57,11 +57,11 @@ const Navbar = ({setShowLogin}) => {
       <div className="navbar-right">
         <div className="navbar-search-icon">
            <img
-             src={assets.basket_icon}
+             src={assets.bag_icon}
              alt=" "
              role="button"
              onClick={openDrawer}
-             style={{cursor:'pointer'}}
+             style={{width:'30px',cursor:'pointer'}}
            />
           <div className={getTotalCartAmount()===0?"":"dot"} />
         </div>
@@ -110,6 +110,13 @@ const Navbar = ({setShowLogin}) => {
                       <img className="cart-item-thumb" src={line.image} alt={line.name} />
                       <div className="cart-item-main">
                         <div className="item-name">{line.name}</div>
+                        {/* show selected options and note if available */}
+                        {line.selections && Object.keys(line.selections).length > 0 && (
+                          <div className="item-sub">
+                            {Object.entries(line.selections).map(([g,vals])=>`${g}: ${vals.join(', ')}`).join(' • ')}
+                          </div>
+                        )}
+                        {line.note && <div className="item-sub">Ghi chú: {line.note}</div>}
                         <div className="item-meta">{new Intl.NumberFormat('vi-VN').format((Number(line.basePrice) + Number(line.optionsPrice || 0)) * Number(line.quantity || 0))}đ</div>
                       </div>
                       <div className="item-controls">
@@ -172,12 +179,35 @@ const Navbar = ({setShowLogin}) => {
                     <p style={{color:'#6b7280'}}>Giỏ hàng trống</p>
                   )}
                 </div>
-                <p style={{color:'#6b7280', marginTop:12}}>Tổng: <b>{getTotalCartAmount()===0? '0đ' : new Intl.NumberFormat('vi-VN').format(getTotalCartAmount()) + 'đ'}</b></p>
+                <p style={{color:'#6b7280', marginTop:12}}>Tổng: <b style={{color:'#f77c6eff'}}>{getTotalCartAmount()===0? '0đ' : new Intl.NumberFormat('vi-VN').format(getTotalCartAmount()) + 'đ'}</b></p>
               </div>
               <div className="cart-drawer-footer">
                 <button
                   className="cart-drawer-checkout"
-                  onClick={() => {
+                  onClick={async () => {
+                    if (getTotalCartAmount() === 0){
+                      closeDrawer();
+                      navigate('/cart');
+                      return;
+                    }
+                    try{
+                      const result = await (validateCartVisibility?.());
+                      if (result && !result.ok){
+                        const msg = 'Một số món hiện không còn khả dụng/đang ẩn:\n- ' + result.invalid.join('\n- ') + '\n\nBạn có muốn xóa các món này khỏi giỏ hàng không?';
+                        const confirmRemove = window.confirm(msg);
+                        if (confirmRemove) {
+                          (result.invalidEntries || []).forEach(entry => {
+                            if (entry.type === 'item' && entry.itemId) {
+                              setCartItems(prev => ({ ...prev, [entry.itemId]: 0 }));
+                            } else if (entry.type === 'line' && entry.key) {
+                              removeCartLine(entry.key);
+                            }
+                          });
+                          alert('Đã xóa các món không còn khả dụng khỏi giỏ hàng.');
+                        }
+                        return;
+                      }
+                    }catch{}
                     closeDrawer();
                     navigate('/cart');
                   }}
@@ -207,9 +237,9 @@ const Navbar = ({setShowLogin}) => {
                   <img src={assets.logout_icon} alt="" />
                   <p style={{margin:0}}>Đăng xuất</p>
                 </li>
-                <li>
+                <li onClick={() => navigate('/track-order')}>
                     <img src={assets.track_order} alt="" />
-                    <Link to="/track-order">Theo dõi đơn hàng</Link>
+                    <p style={{margin:0}}>Theo dõi đơn hàng</p>
                 </li>
               </ul>
             )}

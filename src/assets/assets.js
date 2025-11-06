@@ -66,7 +66,9 @@ import plus from './plus.png'
 import minus from './minus.png'
 import trash from './trash.png'
 import cross from './cross.png'
-
+import shopping from './shopping-online.png'
+import gross from './gross.png'
+import back from './back_icon.png'
 export const assets = {
     logo,
     basket_icon,
@@ -93,7 +95,10 @@ export const assets = {
     plus,
     minus,
     trash,
-    cross
+    cross,
+    shopping,
+    gross,
+    back
 }
 
 export const menu_list = [

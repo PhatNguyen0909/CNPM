@@ -1,20 +1,35 @@
 
 .track-page{
+	box-shadow: 3px 3px 3px 3px rgba(2,6,23,0.06);
+	border-radius: 10px;
 	padding: 24px;
 	max-width: 980px;
 	margin: 0 auto;
 	font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 }
-.track-header{
-	display:flex;
-	align-items:center;
-	gap:16px;
-	margin-bottom:18px;
+
+/* Tabs */
+.track-tabs{ display:flex; align-items:center; gap:12px; margin-bottom:16px }
+.track-tab{ display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; background:#f3f4f6; color:#111827; font-weight:600; border:1px solid #e5e7eb }
+.track-tab .badge{ display:inline-flex; min-width:22px; height:22px; padding:0 6px; align-items:center; justify-content:center; border-radius:999px; background:#e5e7eb; color:#374151; font-weight:700; font-size:12px }
+.track-tab.active{ background:#ffedd5; color:#9a3412; border-color:#fdba74 }
+.track-tab.active .badge{ background:#fdba74; color:#7c2d12 }
+.track-refresh{ margin-left:auto; padding:10px 14px; border-radius:12px; border:1px solid #f59e0b; color:#b45309; background:#fff7ed; font-weight:600 }
+.track-refresh:disabled{ opacity:.6 }
+.order-code{ 
+	color:#6b7280;
+ }
+.status-badge{ 
+	margin-left:auto; 
+	padding:8px 12px; 
+	border-radius:16px; 
+	background:#e6eef8; 
+	color:#1e3a8a; 
+	font-weight:700; 
 }
-.track-header h1{ margin:0; font-size:20px }
-.order-code{ color:#6b7280 }
-.status-badge{ margin-left:auto; padding:8px 12px; border-radius:16px; background:#e6eef8; color:#1e3a8a; font-weight:700 }
-.status-badge.status-completed{ background:#e6f6ea; color:#0f5132 }
+.status-badge.status-completed{ 
+	background:#e6f6ea;
+	 color:#0f5132;}	
 
 .track-card{
 	background:#fff; border-radius:10px; padding:18px; box-shadow:0 1px 4px rgba(2,6,23,0.06); margin-bottom:18px;
@@ -23,10 +38,29 @@
 .progress-fill{ height:100%; background:#111827; transition:width .3s ease }
 .steps{ display:flex; justify-content:space-between; margin-top:8px }
 .step{ display:flex; flex-direction:column; align-items:center; gap:8px; width:20% }
-.step-icon{ width:40px; height:40px; border-radius:50%; background:#eef2ff }
-.step.active .step-icon{ background:#2563eb }
+.step-icon{ width:40px; height:40px; border-radius:50%; background:#eef2ff; display:flex; align-items:center; justify-content:center; font-size:18px }
+.step.active .step-icon{ background:#2563eb; color:#fff }
+.step.done .step-icon{ background:#22c55e; color:#fff }
 .step-label{ font-size:13px; color:#6b7280 }
-.step.active .step-label{ color:#111827; font-weight:700 }
+.step.active .step-label, .step.done .step-label{ color:#111827; font-weight:700 }
+
+/* Status current text under the progress bar */
+.status-current{ margin-top:8px; color:#6b7280 }
+
+/* Items list and rows */
+.items-list{ margin-top:8px }
+.item-row{ margin:10px 0 }
+.item-row hr{
+	border:none; border-top:1px solid #eee; margin:12px 0;
+}
+.item-line{ display:flex; justify-content:space-between; gap:12px }
+.item-name{ font-weight:600 }
+.item-qty{ font-weight:500; color:#6b7280 }
+.item-options{ margin:6px 0 0 16px; padding:0; list-style:disc; color:#374151 }
+.item-option{ font-size:13px }
+.item-note{ font-size:13px; color:#6b7280; margin-top:4px }
+.item-price{ font-weight:600 }
+.thin-sep{ border:none; border-top:1px solid #eee; margin:12px 0 }
 
 .order-info-row{ display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f3f4f6 }
 .order-info-row.total{ font-weight:800; font-size:16px }
@@ -46,4 +80,7 @@
 
 .acc-arrow{ font-size:12px; color:#6b7280 }
 
-
+.order-accordion.open .acc-header{background:#ffedd5;border-top:2px solid #fdba74;border-left:2px solid #fdba74;border-right:2px solid #fdba74;}
+.order-accordion.open .acc-body {border:2px solid #fdba74;}
+.order-accordion:hover {box-shadow:0 12px 12px rgba(2,6,23,0.1);background-color:#fcfbfb;}
+.order-accordion.open  {box-shadow:0 4px 12px rgba(2,6,23,0.1);}

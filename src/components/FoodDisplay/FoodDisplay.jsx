@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import './FoodDisplay.css'
 import { StoreContext } from '../../context/StoreContext'
 import FoodItem from '../FoodItem/FoodItem'
@@ -9,6 +9,7 @@ import menuAPI from '../../services/menuAPI'
 
 const FoodDisplay = ({category}) => {
   const {restaurantId} = useParams();
+  const navigate = useNavigate();
   const { restaurant_list, getRestaurantMenu, replaceRestaurantMenu } = useContext(StoreContext)
   const restaurant = useMemo(() => restaurant_list.find(r => r._id === restaurantId), [restaurant_list, restaurantId]);
   const [menuItems, setMenuItems] = useState([]);
@@ -17,16 +18,29 @@ const FoodDisplay = ({category}) => {
   const FEATURED_CAT = 'Món được yêu thích';
   const foods = menuItems;
 
+  const normalizeCategoryLabel = useCallback((cat) => {
+    if (!cat) return '';
+    if (typeof cat === 'string') return cat.trim();
+    if (typeof cat === 'object') {
+      const label = cat?.name ?? cat?.title ?? cat?.label ?? cat?.categoryName;
+      if (label) return String(label).trim();
+    }
+    return String(cat).trim();
+  }, []);
+
   const categories = useMemo(() => {
     const set = new Set();
-    foods.forEach(f => { if (f.category) set.add(f.category); });
+    foods.forEach(f => {
+      const label = normalizeCategoryLabel(f?.category);
+      if (label) set.add(label);
+    });
     const arr = Array.from(set);
     // Move featured to the front if present
     if (arr.includes(FEATURED_CAT)) {
       return [FEATURED_CAT, ...arr.filter(c => c !== FEATURED_CAT)];
     }
     return arr;
-  }, [foods]);
+  }, [foods, normalizeCategoryLabel]);
   const normalizeMenuItem = useCallback((item, index = 0) => {
     if (!item) return null;
     const status = String(item.status ?? item.itemStatus ?? 'ACTIVE').toUpperCase();
@@ -52,8 +66,17 @@ const FoodDisplay = ({category}) => {
 
     const name = (item.name ?? item.itemName ?? 'Món mới').toString().trim();
     const description = (item.description ?? item.introduction ?? '').toString().trim();
+    // Category can be a plain string or an object from API (e.g., { id, name, active })
     const categoryRaw = item.categoryName ?? item.category ?? item.groupName ?? 'Khác';
-    const category = String(categoryRaw || 'Khác').trim() || 'Khác';
+    const category = (() => {
+      if (!categoryRaw) return 'Khác';
+      if (typeof categoryRaw === 'string') return categoryRaw.trim() || 'Khác';
+      if (typeof categoryRaw === 'object') {
+        const label = categoryRaw?.name ?? categoryRaw?.title ?? categoryRaw?.label;
+        if (label) return String(label).trim() || 'Khác';
+      }
+      return String(categoryRaw).trim() || 'Khác';
+    })();
 
     return {
       _id: String(baseId),
@@ -74,6 +97,10 @@ const FoodDisplay = ({category}) => {
       setMenuItems([]);
       return;
     }
+    try {
+      // Ghi nhớ nhà hàng người dùng đang xem để dùng cho CTA ở giỏ hàng trống
+      localStorage.setItem('lastRestaurantId', String(restaurantId))
+    } catch {}
     const fallback = getRestaurantMenu(restaurantId) || [];
     setMenuItems(fallback);
   }, [restaurantId, getRestaurantMenu]);
@@ -132,11 +159,11 @@ const FoodDisplay = ({category}) => {
   }, []);
   const filteredFoods = useMemo(() => {
     if (activeCat === 'Tất cả') return foods;
-    return foods.filter(f => f.category === activeCat);
-  }, [foods, activeCat]);
+    return foods.filter(f => normalizeCategoryLabel(f?.category) === activeCat);
+  }, [foods, activeCat, normalizeCategoryLabel]);
 
   const openingHoursInfo = useMemo(() => {
-    if (!restaurant) return { today: '', list: [], summary: '' };
+    if (!restaurant) return { today: '', list: [], summary: '', isOpen: false, closeAt: '' };
     const list = Array.isArray(restaurant.openingHours) ? restaurant.openingHours : [];
     const summary = restaurant.openingHoursSummary || '';
     const weekdayNames = [
@@ -175,13 +202,33 @@ const FoodDisplay = ({category}) => {
         default: return str;
       }
     };
-    const todayName = weekdayNames[new Date().getDay()];
-    const todayEntry = list.find(item => {
-      const label = item?.day ?? '';
-      if (!label) return false;
-      const normalized = String(label).toLowerCase();
-      return normalized === todayName.toLowerCase() || normalized.startsWith(todayName.slice(0, 3).toLowerCase());
-    });
+    const todayIdx = new Date().getDay(); // 0 = Sunday
+    const dayStringToIndex = (value) => {
+      if (!value) return NaN;
+      const str = String(value).trim().toLowerCase();
+      const fullMap = {
+        sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+      };
+      if (fullMap[str] !== undefined) return fullMap[str];
+      const short = str.slice(0, 3);
+      const shortMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+      if (shortMap[short] !== undefined) return shortMap[short];
+      // Vietnamese variants: CN, Chủ nhật, Thứ 2-7
+      if (/\bcn\b|chủ nhật|chu nhat/.test(str)) return 0;
+      const digitMatch = str.match(/\b([2-7])\b/);
+      if (digitMatch) return Number(digitMatch[1]) - 1;
+      return NaN;
+    };
+    let todayEntry = list.find(item => dayStringToIndex(item?.day ?? '') === todayIdx);
+    if (!todayEntry) {
+      const todayName = weekdayNames[todayIdx];
+      todayEntry = list.find(item => {
+        const label = item?.day ?? '';
+        if (!label) return false;
+        const normalized = String(label).toLowerCase();
+        return normalized === todayName.toLowerCase() || normalized.startsWith(todayName.slice(0, 3).toLowerCase());
+      });
+    }
     const localizedList = list.map(entry => ({
       ...entry,
       dayLabel: normalizeDayLabel(entry?.day ?? entry?.label ?? ''),
@@ -220,10 +267,69 @@ const FoodDisplay = ({category}) => {
     const localizedSummary = localizedList.length > 0
       ? localizedList.map(({ day, dayLabel, label }) => `${dayLabel || day}: ${label}`).join(' | ')
       : replaceDayTokens(summary);
+    // --- Parse today's hours to figure out if currently open and the closing time ---
+    const now = new Date();
+    const minutesNow = now.getHours() * 60 + now.getMinutes();
+    const timeToken = /^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i;
+    const toMinutes = (token) => {
+      if (!token) return NaN;
+      const t = token.trim();
+      const m = t.match(timeToken);
+      if (!m) return NaN;
+      let h = parseInt(m[1], 10);
+      const min = parseInt(m[2] ?? '0', 10);
+      const ap = (m[3] || '').toLowerCase();
+      if (ap === 'pm' && h < 12) h += 12;
+      if (ap === 'am' && h === 12) h = 0;
+      if (h >= 0 && h < 24 && min >= 0 && min < 60) return h * 60 + min;
+      return NaN;
+    };
+    const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
+    const fmt = (mins) => {
+      const m = ((mins % 1440) + 1440) % 1440; // keep in [0,1440)
+      const hh = Math.floor(m / 60);
+      const mm = m % 60;
+      return `${pad(hh)}:${pad(mm)}`;
+    };
+    const normalizeLabel = (text) => String(text || '').replace(/[–—to]/gi, '-');
+    const parseRanges = (label) => {
+      const str = normalizeLabel(label);
+      if (!str || /đóng|closed/i.test(str)) return [];
+      // split by comma for multiple windows
+      return str.split(/\s*,\s*/).map(seg => {
+        const parts = seg.split(/\s*-\s*/).map(s => s.trim()).filter(Boolean);
+        if (parts.length < 2) return null;
+        const start = toMinutes(parts[0]);
+        const end = toMinutes(parts[1]);
+        if (Number.isFinite(start) && Number.isFinite(end)) return { start, end };
+        return null;
+      }).filter(Boolean);
+    };
+
+    let isOpen = false;
+    let closeAt = '';
+    if (todayEntry?.label) {
+      const ranges = parseRanges(todayEntry.label);
+      for (const { start, end } of ranges) {
+        // handle overnight (e.g., 20:00-02:00)
+        const spansMidnight = end < start;
+        const inRange = spansMidnight
+          ? (minutesNow >= start || minutesNow < end)
+          : (minutesNow >= start && minutesNow < end);
+        if (inRange) {
+          isOpen = true;
+          closeAt = fmt(spansMidnight && minutesNow < end ? end : end); // same formatting
+          break;
+        }
+      }
+    }
+
     return {
       today: todayEntry?.label || '',
       list: localizedList,
       summary: localizedSummary,
+      isOpen,
+      closeAt,
     };
   }, [restaurant]);
 
@@ -308,6 +414,10 @@ const FoodDisplay = ({category}) => {
     return (
     <div className='food-display' id='food-display'>
       {restaurant && (
+        <>
+         <div className='Back-btn' onClick={() => navigate('/') }>
+            <img src={assets.back} alt="" />
+          </div>
         <div className="restaurant-header">
           <div className="rh-left">
             <img className="rh-image" src={restaurant.image} alt={restaurant.name} />
@@ -328,17 +438,23 @@ const FoodDisplay = ({category}) => {
               <button className="rh-fav-btn" type="button">❤ Thêm vào Yêu thích</button>
             </div>
             <div className="rh-meta">
-              <span className="rh-rating">★ {Number(restaurant.rating || 0).toFixed(1)}</span>
-              {restaurant.ratingCount !== undefined && (
-                <>
-                  <span className="rh-sep">•</span>
-                  <a href="#reviews" className="rh-link">{restaurant.ratingCount > 0 ? `${restaurant.ratingCount} đánh giá` : 'Chưa có đánh giá'}</a>
-                </>
+              {/* Đánh giá: hiển thị sao kèm số điểm; nếu chưa có thì ghi (chưa có) */}
+              {Number(restaurant?.rating || 0) > 0 ? (
+                <span className="rh-rating" aria-label="Đánh giá">★ {Number(restaurant.rating).toFixed(1)}</span>
+              ) : (
+                <span className="rh-no-rating">(chưa có đánh giá)</span>
               )}
+              
               {(openingHoursInfo.today || openingHoursInfo.summary) && (
                 <>
                   <span className="rh-sep">•</span>
-                  <span className="rh-open">{openingHoursInfo.today ? `Hôm nay: ${openingHoursInfo.today}` : `Giờ mở cửa: ${openingHoursInfo.summary}`}</span>
+                  <span className="rh-open">
+                    {openingHoursInfo.isOpen && openingHoursInfo.closeAt
+                      ? `Mở cửa đến ${openingHoursInfo.closeAt}`
+                      : (openingHoursInfo.today
+                        ? `Hôm nay: ${openingHoursInfo.today}`
+                        : `Giờ mở cửa: ${openingHoursInfo.summary}`)}
+                  </span>
                 </>
               )}
             </div>
@@ -352,6 +468,7 @@ const FoodDisplay = ({category}) => {
             )}
           </div>
         </div>
+        </>
       )}
       {showInfoModal && restaurant && (
         <div className="rest-info-modal" role="dialog" aria-modal="true">

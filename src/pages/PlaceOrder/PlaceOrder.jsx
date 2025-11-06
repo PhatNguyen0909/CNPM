@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import ProtectedRoute from '../../components/ProtectedRoute/ProtectedRoute'
 import orderAPI from '../../services/orderAPI'
 import { attachToken } from '../../services/apiClient'
+import { formatVND } from '../../utils/formatCurrency'
 
 const PlaceOrder = () => {
 
@@ -14,13 +15,8 @@ const PlaceOrder = () => {
   const [data, setData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
-    street: "",
-    city: "",
-    state: "",
-    zipcode: "",
-    country: "",
     phone: "",
+    addressDetail: "",
     note: ""
   })
   const [submitting, setSubmitting] = useState(false)
@@ -35,11 +31,10 @@ const PlaceOrder = () => {
       alert("Giỏ hàng của bạn đang trống!");
     }
     
-    // Tự động điền email từ thông tin user
-    if (user && user.email) {
+    // Tự động điền tên từ thông tin user (nếu có)
+    if (user && user.name) {
       setData(prevData => ({
         ...prevData,
-        email: user.email,
         firstName: user.name ? user.name.split(' ')[0] : '',
         lastName: user.name ? user.name.split(' ').slice(1).join(' ') : ''
       }));
@@ -51,16 +46,22 @@ const PlaceOrder = () => {
   }, [data.firstName, data.lastName])
 
   const deliveryAddress = useMemo(() => {
-    return [data.street, data.state, data.city, data.country, data.zipcode]
-      .map(part => part.trim())
-      .filter(Boolean)
-      .join(', ');
-  }, [data.street, data.state, data.city, data.country, data.zipcode])
+    return (data.addressDetail || '').trim();
+  }, [data.addressDetail])
 
   const onChangeHandler = (event) => {
     const name = event.target.name;
     const value = event.target.value;
     setData(data => ({ ...data, [name]: value }))
+  }
+
+  // Hỗ trợ nhập "Họ và tên" một ô duy nhất
+  const onFullNameChange = (e) => {
+    const value = e.target.value || '';
+    const parts = value.trim().split(/\s+/);
+    const first = parts[0] || '';
+    const last = parts.slice(1).join(' ');
+    setData(prev => ({ ...prev, firstName: first, lastName: last }));
   }
 
   const placeOrder = async (event) => {
@@ -180,110 +181,126 @@ const PlaceOrder = () => {
     }
   }
 
+  // Chuẩn bị dữ liệu hiển thị tóm tắt đơn hàng
+  const subtotal = Number(getTotalCartAmount() || 0);
+  const shippingFee = subtotal === 0 ? 0 : 15000;
+  const grandTotal = subtotal + shippingFee;
+
+  // Kết xuất
   return (
     <form onSubmit={placeOrder} className='place-order'>
+      {/* Left column */}
       <div className="place-order-left">
-        <p className="title">Thông tin giao hàng</p>
-        <div className="multi-fields">
-          <input 
-            required 
-            name='firstName' 
-            onChange={onChangeHandler} 
-            value={data.firstName} 
-            type="text" 
-            placeholder='Họ' 
+        <div className="info-card">
+          <div className="card-title">Thông tin khách hàng</div>
+          <input
+            required
+            name='fullName'
+            onChange={onFullNameChange}
+            value={fullName}
+            type="text"
+            placeholder='Họ và tên'
           />
-          <input 
-            required 
-            name='lastName' 
-            onChange={onChangeHandler} 
-            value={data.lastName} 
-            type="text" 
-            placeholder='Tên' 
+          <input
+            required
+            name='phone'
+            onChange={onChangeHandler}
+            value={data.phone}
+            type="text"
+            placeholder='Số điện thoại'
+          />
+          {submitError && <p className='error-text'>{submitError}</p>}
+        </div>
+
+        <div className="address-card">
+          <div className="card-title">Địa chỉ giao hàng</div>
+          <input
+            required
+            name='addressDetail'
+            onChange={onChangeHandler}
+            value={data.addressDetail}
+            type="text"
+            placeholder='Địa chỉ chi tiết (Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành)'
+          />
+          <textarea
+            name='note'
+            onChange={onChangeHandler}
+            value={data.note}
+            placeholder='Ghi chú cho tài xế (không bắt buộc)'
+            rows={3}
           />
         </div>
-        <input 
-          required 
-          name='email' 
-          onChange={onChangeHandler} 
-          value={data.email} 
-          type="email" 
-          placeholder='Email' 
-        />
-        <input 
-          required 
-          name='street' 
-          onChange={onChangeHandler} 
-          value={data.street} 
-          type="text" 
-          placeholder='Địa chỉ' 
-        />
-        <div className="multi-fields">
-          <input 
-            required 
-            name='city' 
-            onChange={onChangeHandler} 
-            value={data.city} 
-            type="text" 
-            placeholder='Thành phố' 
-          />
-          <input 
-            required 
-            name='state' 
-            onChange={onChangeHandler} 
-            value={data.state} 
-            type="text" 
-            placeholder='Quận/Huyện' 
-          />
-        </div>
-        <div className="multi-fields">
-          <input 
-            required 
-            name='zipcode' 
-            onChange={onChangeHandler} 
-            value={data.zipcode} 
-            type="text" 
-            placeholder='Mã bưu điện' 
-          />
-          <input 
-            required 
-            name='country' 
-            onChange={onChangeHandler} 
-            value={data.country} 
-            type="text" 
-            placeholder='Quốc gia' 
-          />
-        </div>
-        <input 
-          required 
-          name='phone' 
-          onChange={onChangeHandler} 
-          value={data.phone} 
-          type="text" 
-          placeholder='Số điện thoại' 
-        />
-        <textarea
-          name='note'
-          onChange={onChangeHandler}
-          value={data.note}
-          placeholder='Ghi chú đơn hàng (không bắt buộc)'
-          rows={3}
-        />
-        {submitError && <p className='error-text'>{submitError}</p>}
       </div>
+
+      {/* Right column */}
       <div className="place-order-right">
-        <div className="cart-total">
-          <h2>Tổng đơn hàng</h2>
-          <div className="cart-total-details">
-            <p>Tạm tính: <span>{getTotalCartAmount()}</span></p>
-            <hr />
-            <p>Phí giao hàng: <span>{getTotalCartAmount() === 0 ? 0 : 15000}</span></p>
-            <hr />
-            <b>Tổng cộng: <span>{getTotalCartAmount() === 0 ? 0 : getTotalCartAmount() + 15000}</span></b>
+        <div className="order-card">
+          <div className="card-title">Đơn hàng của bạn</div>
+
+          {/* Danh sách món */}
+          <div className='order-items'>
+            {Object.entries(cartItems || {}).map(([itemId, qty]) => {
+              const item = food_list.find(f => String(f._id) === String(itemId));
+              const nQty = Number(qty || 0);
+              if (!item || nQty <= 0) return null;
+              return (
+                <div className='order-item-row' key={`oi-${itemId}`}>
+                  <div className='name'>{item.name} <span className='sub'>{`x${nQty}`}</span></div>
+                  <div className='price'>{formatVND(item.price)}</div>
+                 
+                </div>
+              );
+            })}
+
+            {(cartLines || []).map((line) => {
+              const unit = Number(line.basePrice) + Number(line.optionsPrice || 0);
+              const nQty = Number(line.quantity || 0);
+              if (nQty <= 0) return null;
+              return (
+                <div className='order-item-row' key={`cl-${line.key}`}>
+                  <div className='name'>{line.name} <span className='sub'>{`x${nQty}`}</span></div>
+                  <div className='price'>{formatVND(unit * nQty)}</div>
+                  
+                </div>
+              );
+            })}
           </div>
-          <button type='submit' disabled={submitting}>
-            {submitting ? 'Đang xử lý...' : 'THANH TOÁN'}
+
+          <hr />
+
+          {/* Tạm tính + phí giao hàng */}
+          <div className='order-summary-rows'>
+            <div className='row'>
+              <div className='label'>Tạm tính</div>
+              <div className='value'>{formatVND(subtotal)}</div>
+            </div>
+            <div className='row'>
+              <div className='label'>Phí giao hàng</div>
+              <div className='value'>{formatVND(shippingFee)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tổng thanh toán + nút xác nhận */}
+        <div className='payment-box'>
+          <div className='payment-total'>
+            <div className='label'>Tổng thanh toán</div>
+             <div className='amount'>{formatVND(grandTotal)}</div>
+          </div>
+          <button type='submit' disabled={submitting} className='confirm-btn'>
+            {submitting ? 'Đang xử lý...' : 'Xác nhận đặt hàng'}
           </button>
+          
+        </div>
+
+        {/* Lưu ý */}
+        <div className='tips-card'>
+          <div className='tips-title'>Lưu ý khi đặt hàng:</div>
+          <ul>
+            <li>Vui lòng kiểm tra kỹ thông tin trước khi đặt hàng</li>
+            <li>Thời gian giao hàng có thể thay đổi tùy điều kiện thực tế</li>
+            <li>Liên hệ hotline nếu cần hỗ trợ</li>
+          </ul>
         </div>
       </div>
     </form>

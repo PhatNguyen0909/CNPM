@@ -12,7 +12,7 @@ export default defineConfig({
     ],
     proxy: {
       '/potato-api': {
-        target: process.env.VITE_PROXY_TARGET || 'https://cruise-silk-licence-shed.trycloudflare.com',
+        target: process.env.VITE_PROXY_TARGET || 'https://themselves-resolve-routing-ricky.trycloudflare.com',
         changeOrigin: true,
         secure: false,
         ws: false,

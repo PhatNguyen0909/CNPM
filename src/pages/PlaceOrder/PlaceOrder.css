@@ -2,22 +2,39 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 50px;
-    margin-top: 100px;
-    margin-bottom: 100px;
+    gap: 30px;
+    margin-top: 60px;
+    margin-bottom: 80px;
     padding: 0 5%;
 }
 
 .place-order-left {
     width: 100%;
-    max-width: 500px;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.place-order-left .title {
-    font-size: 30px;
+/* Generic card style */
+.info-card, .address-card, .order-card, .payment-box, .tips-card {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-radius: 10px;
+    background: #fff;
+}
+
+.info-card, .address-card {
+    padding: 24px;
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
     font-weight: 600;
-    margin-bottom: 50px;
     color: #333;
+    margin-bottom: 16px;
 }
 
 .place-order-left input,
@@ -43,99 +60,84 @@
     font-size: 14px;
 }
 
-.place-order-left .multi-fields {
-    display: flex;
-    gap: 10px;
-}
+.place-order-left .multi-fields { display: flex; gap: 10px; }
 
 .place-order-right {
     width: 100%;
-    max-width: 500px;
-}
-
-.cart-total {
-    flex: 1;
+    max-width: 520px;
     display: flex;
     flex-direction: column;
     gap: 20px;
+    padding: 0; /* children have their own padding */
 }
 
-.cart-total h2 {
-    color: #333;
-    font-size: 24px;
-    margin-bottom: 20px;
+/* Order summary card */
+.order-card { padding: 24px; }
+
+.order-card .order-items { display: flex; flex-direction: column; gap: 12px; }
+.order-item-row { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 12px; }
+.order-item-row .name { grid-column: 1/2; grid-row: 1/2; font-weight: 500; color: #333; }
+.order-item-row .price { grid-column: 2/3; grid-row: 1/2; justify-self: end; font-weight: 600; color: #333; }
+.order-item-row .sub { grid-column: 1/3; grid-row: 2/3; color: #666; font-size: 15px; }
+
+.order-card .order-summary-rows { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.order-card .row { display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+.order-card .row .label { color: #555; }
+.order-card .row .value { font-weight: 600; }
+
+/* Payment box (highlight) */
+.payment-box{
+    display:flex;
+    padding: 40px 24px;
+    background-color: #fce8d9;
+}
+.payment-total{
+    padding-right: 40%;
+}
+.payment-box .label{
+    color: #555;
 }
 
-.cart-total-details {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    background-color: #f8f8f8;
-    padding: 20px;
-    border-radius: 8px;
+.payment-box .amount{
+    font-weight: 600;
+    font-size: 20px;
+    color: tomato;
+}
+.confirm-btn{
+    padding: auto;
+    padding-left: 10px;
+    padding-right: 5px;
+    background-color: tomato;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.confirm-btn:hover{
+    background-color: #e25822;
 }
 
-.cart-total-details p {
-    display: flex;
-    justify-content: space-between;
-    margin: 0;
-    font-size: 16px;
-}
+/* Tips card */
+.tips-card { padding: 20px 24px; background-color: #dbebf9; }
+.tips-title { font-weight: 600; color: #2563eb; margin-bottom: 8px; }
+.tips-card ul { margin: 0; padding-left: 20px; color: #1f2937; }
+.tips-card li { margin: 6px 0; list-style: disc; }
 
-.cart-total-details hr {
+.order-card hr {
     border: none;
     height: 1px;
     background-color: #ddd;
     margin: 5px 0;
 }
 
-.cart-total-details b {
-    display: flex;
-    justify-content: space-between;
-    color: #333;
-    font-size: 18px;
-    margin-top: 10px;
-}
-
-.cart-total button {
-    border: none;
-    color: white;
-    background-color: tomato;
-    padding: 15px 0px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    margin-top: 30px;
-    transition: background-color 0.3s ease;
-}
-
-.cart-total button:hover {
-    background-color: #e55347;
-}
-
-.cart-total button:disabled {
-    background-color: #f5a099;
-    cursor: not-allowed;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
     .place-order {
         flex-direction: column;
-        gap: 30px;
-        margin-top: 50px;
+        gap: 20px;
+        margin-top: 30px;
         padding: 0 3%;
-    }
-    
-    .place-order-left .title {
-        font-size: 24px;
-        margin-bottom: 30px;
-    }
-    
-    .place-order-left .multi-fields {
-        flex-direction: column;
-        gap: 0;
     }
     
     .place-order-right {
@@ -147,27 +149,6 @@
     .place-order {
         padding: 0 2%;
     }
-    
-    .place-order-left .title {
-        font-size: 20px;
-        margin-bottom: 20px;
-    }
-    
-    .place-order-left input {
-        padding: 12px;
-        font-size: 16px;
-    }
-    
-    .cart-total h2 {
-        font-size: 20px;
-    }
-    
-    .cart-total-details {
-        padding: 15px;
-    }
-    
-    .cart-total button {
-        padding: 12px 0px;
-        font-size: 14px;
-    }
+    .place-order-left input { padding: 12px; font-size: 16px; }
+    .confirm-btn { padding: 12px 14px; font-size: 14px; }
 }

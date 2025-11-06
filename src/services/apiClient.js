@@ -1,9 +1,28 @@
 import axios from 'axios';
 import { getCookie } from '../utils/cookieUtils';
 
-const API_BASE_URL =
-  import.meta?.env?.VITE_API_BASE_URL?.trim() ||
-  '/potato-api';
+// Compute base URL from env. Prefer absolute VITE_PROXY_TARGET when provided,
+// but strip swagger-ui paths if the user copied the docs URL.
+const envApi = import.meta?.env?.VITE_API_BASE_URL?.trim();
+const envProxy = import.meta?.env?.VITE_PROXY_TARGET?.trim();
+
+const normalizeProxyBase = (url) => {
+  if (!url) return '';
+  try {
+    const u = new URL(url);
+    // remove swagger-ui or other trailing doc paths if present
+    const cleanPath = u.pathname
+      .replace(/\/swagger-ui\/.*/i, '')
+      .replace(/\/?index\.html\??.*$/i, '')
+      .replace(/\/?$/,'');
+    return `${u.origin}${cleanPath}`;
+  } catch {
+    return '';
+  }
+};
+
+const proxyBase = normalizeProxyBase(envProxy);
+const API_BASE_URL = proxyBase || envApi || '/potato-api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
