@@ -22,6 +22,9 @@ const StoreContextProvider = (props) => {
   const [isFetchingRestaurants, setIsFetchingRestaurants] = useState(false);
   const [foods, setFoods] = useState(staticFoodList || []);
   const foodsRef = useRef(staticFoodList || []);
+  // Cache for menu item visibility/active checks to avoid refetch lag
+  const visibilityCacheRef = useRef(new Map()); // key: menuItemId -> { ok, reason, at }
+  const VIS_TTL_MS = 60_000; // 60s TTL
 
   // Build current cart payload that backend expects for /cart validation
   function buildBackendCartItems() {
@@ -669,19 +672,54 @@ const StoreContextProvider = (props) => {
         tasks.push(
           (async () => {
             try {
-              const res = await menuAPI.fetchMenuItemById(menuItemId);
-              const status = String(res?.status ?? res?.itemStatus ?? '').toUpperCase();
-              const visible = res?.visible ?? res?.isVisible ?? res?.active ?? res?.isActive;
-              const isActiveStatus = !status || status === 'ACTIVE';
-              const isVisible = visible === undefined ? true : Boolean(visible);
-              if (!(isActiveStatus && isVisible)) {
-                invalid.push(displayName || String(menuItemId));
-                invalidEntries.push({ name: displayName || String(menuItemId), ...removalInfo });
+              const now = Date.now();
+              const cache = visibilityCacheRef.current;
+              let cached = cache.get(String(menuItemId));
+              const isFresh = cached && (now - (cached.at || 0) < VIS_TTL_MS);
+              let evalRes = cached;
+              if (!isFresh) {
+                const res = await menuAPI.fetchMenuItemById(menuItemId);
+                // Evaluate
+                let reason = '';
+                if (!res) {
+                  reason = 'not_found';
+                } else {
+                  const status = String(res?.status ?? res?.itemStatus ?? res?.state ?? '').toUpperCase();
+                  const visibleRaw = (
+                    res?.visible ?? res?.isVisible ?? res?.is_visible ??
+                    res?.active ?? res?.isActive ?? res?.is_active ??
+                    res?.enabled ?? res?.isEnabled
+                  );
+                  const explicitVisible = res?.visible;
+                  const explicitActive = res?.active;
+                  const availability = res?.available ?? res?.availability ?? res?.isAvailable;
+                  const isDeleted = Boolean(res?.deleted || res?.isDeleted || res?.deletedAt);
+                  const isActiveStatus = (!status || status === 'ACTIVE' || status === 'PUBLISHED');
+                  const isHiddenStatus = (status === 'HIDDEN' || status === 'INACTIVE' || status === 'DISABLED' || status === 'UNAVAILABLE' || status === 'DELETED');
+                  const isVisible = (visibleRaw === undefined ? true : Boolean(visibleRaw));
+
+                  if (explicitActive === false) reason = 'inactive';
+                  if (explicitVisible === false) reason = reason ? `${reason}_hidden` : 'hidden';
+                  if (!reason) {
+                    if (!isActiveStatus || isHiddenStatus) reason = 'inactive';
+                    if (!isVisible) reason = reason ? `${reason}_hidden` : 'hidden';
+                  }
+                  if (!reason && isDeleted) reason = 'deleted';
+                  if (!reason && availability === false) reason = 'unavailable';
+                }
+                evalRes = { ok: !reason, reason, at: now };
+                cache.set(String(menuItemId), evalRes);
+              }
+              if (!evalRes?.ok) {
+                const name = displayName || String(menuItemId);
+                invalid.push(name);
+                invalidEntries.push({ name, reason: evalRes?.reason || 'error', ...removalInfo });
               }
             } catch {
               // If cannot load item, treat as invalid to be safe
-              invalid.push(displayName || String(menuItemId));
-              invalidEntries.push({ name: displayName || String(menuItemId), ...removalInfo });
+              const name = displayName || String(menuItemId);
+              invalid.push(name);
+              invalidEntries.push({ name, reason: 'error', ...removalInfo });
             }
           })()
         );
@@ -706,6 +744,70 @@ const StoreContextProvider = (props) => {
       return { ok: invalid.length === 0, invalid, invalidEntries };
     },
   }
+
+  // Prefetch item visibility state in background when cart changes to improve UX
+  useEffect(() => {
+    const menuItemIds = new Set();
+    // legacy
+    Object.entries(cartItems || {}).forEach(([id, qty]) => {
+      if (!qty || qty <= 0) return;
+      const item = foodsRef.current.find(f => String(f._id) === String(id));
+      if (!item) return;
+      const raw = item.raw || {};
+      const menuItemId = raw.id ?? raw.menuItemId ?? item._id;
+      if (menuItemId) menuItemIds.add(String(menuItemId));
+    });
+    // lines
+    (cartLines || []).forEach(line => {
+      if (line?.itemId) menuItemIds.add(String(line.itemId));
+    });
+
+    if (menuItemIds.size === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      const now = Date.now();
+      const cache = visibilityCacheRef.current;
+      for (const id of menuItemIds) {
+        const cached = cache.get(id);
+        if (cached && (now - (cached.at || 0) < VIS_TTL_MS)) continue;
+        try {
+          const res = await menuAPI.fetchMenuItemById(id);
+          if (cancelled) return;
+          let reason = '';
+          if (!res) reason = 'not_found';
+          else {
+            const status = String(res?.status ?? res?.itemStatus ?? res?.state ?? '').toUpperCase();
+            const visibleRaw = (
+              res?.visible ?? res?.isVisible ?? res?.is_visible ??
+              res?.active ?? res?.isActive ?? res?.is_active ??
+              res?.enabled ?? res?.isEnabled
+            );
+            const explicitVisible = res?.visible;
+            const explicitActive = res?.active;
+            const availability = res?.available ?? res?.availability ?? res?.isAvailable;
+            const isDeleted = Boolean(res?.deleted || res?.isDeleted || res?.deletedAt);
+            const isActiveStatus = (!status || status === 'ACTIVE' || status === 'PUBLISHED');
+            const isHiddenStatus = (status === 'HIDDEN' || status === 'INACTIVE' || status === 'DISABLED' || status === 'UNAVAILABLE' || status === 'DELETED');
+            const isVisible = (visibleRaw === undefined ? true : Boolean(visibleRaw));
+            if (explicitActive === false) reason = 'inactive';
+            if (explicitVisible === false) reason = reason ? `${reason}_hidden` : 'hidden';
+            if (!reason) {
+              if (!isActiveStatus || isHiddenStatus) reason = 'inactive';
+              if (!isVisible) reason = reason ? `${reason}_hidden` : 'hidden';
+            }
+            if (!reason && isDeleted) reason = 'deleted';
+            if (!reason && availability === false) reason = 'unavailable';
+          }
+          cache.set(id, { ok: !reason, reason, at: Date.now() });
+        } catch {
+          if (cancelled) return;
+          cache.set(id, { ok: false, reason: 'error', at: Date.now() });
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [cartItems, cartLines]);
 
   return (
     <StoreContext.Provider value={contextValue}>
