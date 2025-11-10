@@ -61,7 +61,9 @@ const RestaurantDisplay = ({ selectedCuisine, ratingFilter = 0, sortBy = 'highes
               image={item.image}
               cuisine={item.cuisine}
               rating={item.rating}
+              ratingCount={item.ratingCount}
               address={item.address}
+              isOpen={item.open !== false}
             />
           ))}
         </div>
@@ -116,7 +118,9 @@ const RestaurantDisplay = ({ selectedCuisine, ratingFilter = 0, sortBy = 'highes
               image={item.image}
               cuisine={item.cuisine}
               rating={item.rating}
+              ratingCount={item.ratingCount}
               address={item.address}
+              isOpen={item.open !== false}
             />
           ))
         ) : (

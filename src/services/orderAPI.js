@@ -1,5 +1,32 @@
 import api from './apiClient';
 
+// Normalize line option from various shapes
+const normalizeOption = (opt) => {
+  if (!opt) return null;
+  const name = opt.optionValueName || opt.name || opt.title || opt.label || '';
+  const extra = Number(opt.extraPrice ?? opt.priceDelta ?? opt.extra_price ?? opt.price ?? 0) || 0;
+  return { option: String(name), extra_price: extra };
+};
+
+// Normalize line item from various shapes
+const normalizeItem = (item) => {
+  if (!item) return null;
+  const qty = Number(item.quantity ?? item.qty ?? 1) || 1;
+  const base = Number(item.menuItemBasePrice ?? item.basePrice ?? item.price ?? 0) || 0;
+  const subtotal = Number(item.subtotal ?? item.totalPrice ?? base * qty) || 0;
+  const name = item.menuItemName || item.name || item.itemName || 'Sản phẩm';
+  const optionsRaw = item.optionValues || item.options || item.selectedOptions || [];
+  const options = Array.isArray(optionsRaw) ? optionsRaw.map(normalizeOption).filter(Boolean) : [];
+  return {
+    name: String(name),
+    quantity: qty,
+    base_price: base,
+    subtotal,
+    options,
+    note: item.note || '',
+  };
+};
+
 // Normalize different backend shapes into a single order object we can render safely
 const normalizeOrder = (input) => {
   const o = input || {};
@@ -23,6 +50,13 @@ const normalizeOrder = (input) => {
   const createdAt = o[createdKey];
   const updatedAt = o[updatedKey];
 
+  // items
+  const itemsRawCandidates = [o.orderItems, o.items, o.order_items, o.detailItems];
+  let items = [];
+  for (const cand of itemsRawCandidates) {
+    if (Array.isArray(cand)) { items = cand.map(normalizeItem).filter(Boolean); break; }
+  }
+
   return {
     id: o[idKey] ?? undefined,
     code: String(o[codeKey] ?? o["order_code"] ?? '').trim() || undefined,
@@ -33,6 +67,7 @@ const normalizeOrder = (input) => {
     totalAmount: toNumber(o[totalKey], 0),
     createdAt,
     updatedAt,
+    items,
     raw: o,
   };
 };
@@ -110,6 +145,20 @@ const orderAPI = {
     } catch {}
     if (lastErr) throw lastErr;
     return null;
+  },
+  /**
+   * Rate a completed order with stars only.
+   * @param {number|string} orderId
+   * @param {number} rating 1-5
+   */
+  async rateOrder(orderId, rating){
+    if (!orderId) throw new Error('Thiếu orderId');
+    const r = Number(rating);
+    if (!Number.isFinite(r) || r < 1 || r > 5) {
+      throw new Error('Điểm đánh giá không hợp lệ');
+    }
+    const res = await api.post('/rating', { orderId, rating: r });
+    return res?.data;
   }
 };
 
