@@ -4,6 +4,7 @@ import { StoreContext } from '../../context/StoreContext'
 import { useNavigate } from 'react-router-dom'
 import { formatVND } from '../../utils/formatCurrency'
 import { assets } from '../../assets/assets'
+import ValidationPopup from '../../components/ValidationPopup/ValidationPopup'
 
 const Cart = () => {
   const{setCartItems,cartItems,cartLines,food_list,restaurant_list:addRestaurants,addToCart,removeFromCart,removeCartLine,updateCartLineQty,getTotalCartAmount,token,user, validateCartVisibility} = useContext(StoreContext);
@@ -20,6 +21,10 @@ const Cart = () => {
 
   const [orderNote, setOrderNote] = useState('');
 
+  const [checking, setChecking] = useState(false);
+  const [validationResult, setValidationResult] = useState(null); // { invalidEntries, invalid }
+  const [removingInvalid, setRemovingInvalid] = useState(false);
+
   const proceedToCheckout = async () => {
     if (!token) {
       alert("Vui lòng đăng nhập để tiến hành thanh toán!");
@@ -27,24 +32,14 @@ const Cart = () => {
     }
     // Validate visibility/active of all items before checkout
     try{
+      setChecking(true);
       const result = await validateCartVisibility();
       if (!result.ok){
-        const msg = 'Một số món hiện không còn khả dụng/đang ẩn:\n- ' + result.invalid.join('\n- ') + '\n\nBạn có muốn xóa các món này khỏi giỏ hàng không?';
-        const confirmRemove = window.confirm(msg);
-        if (confirmRemove) {
-          // Xóa các món không còn khả dụng khỏi giỏ
-          (result.invalidEntries || []).forEach(entry => {
-            if (entry.type === 'item' && entry.itemId) {
-              setCartItems(prev => ({ ...prev, [entry.itemId]: 0 }));
-            } else if (entry.type === 'line' && entry.key) {
-              removeCartLine(entry.key);
-            }
-          });
-          alert('Đã xóa các món không còn khả dụng khỏi giỏ hàng.');
-        }
-        return;
+        setValidationResult(result);
+        return; // stop flow until user handles popup
       }
     }catch{/* ignore, continue */}
+    finally { setChecking(false); }
     // Lưu ghi chú đơn hàng để trang đặt hàng có thể đọc lại (nếu cần)
     try { localStorage.setItem('orderNote', orderNote || ''); } catch {}
     navigate('/order');
@@ -139,6 +134,7 @@ const Cart = () => {
       : String(currentRestaurant?.open ?? '').toLowerCase() === 'true';
 
   return (
+    <>
     <div className='cart-page'>
       <div className='cart-container'>
           {/* Header + summary + restaurant banner */}
@@ -259,7 +255,9 @@ const Cart = () => {
               : formatVND(getTotalCartAmount() + 15000)}
           </div>
         </div>
-               <button onClick={proceedToCheckout} disabled={!isOpen} title={!isOpen ? 'Nhà hàng đang đóng cửa' : undefined}>TIẾN HÀNH THANH TOÁN</button>
+               <button onClick={proceedToCheckout} disabled={!isOpen || checking} title={!isOpen ? 'Nhà hàng đang đóng cửa' : undefined}>
+                 {checking ? 'Đang kiểm tra…' : 'TIẾN HÀNH THANH TOÁN'}
+               </button>
                {!isOpen && (
                  <p style={{ marginTop: 8, color: '#d14343', fontSize: 13 }}>
                    Nhà hàng đang đóng cửa, bạn có muốn đổi nhà hàng khác không ?
@@ -275,6 +273,30 @@ const Cart = () => {
 
       </div>
     </div>
+    {validationResult && (
+      <ValidationPopup
+        invalidEntries={validationResult.invalidEntries || []}
+        checking={removingInvalid}
+        onRemove={() => {
+          if (removingInvalid) return;
+          setRemovingInvalid(true);
+          try {
+            (validationResult.invalidEntries || []).forEach(entry => {
+              if (entry.type === 'item' && entry.itemId) {
+                setCartItems(prev => ({ ...prev, [entry.itemId]: 0 }));
+              } else if (entry.type === 'line' && entry.key) {
+                removeCartLine(entry.key);
+              }
+            });
+          } finally {
+            setRemovingInvalid(false);
+            setValidationResult(null);
+          }
+        }}
+        onClose={() => setValidationResult(null)}
+      />
+    )}
+  </>
   )
 }
 

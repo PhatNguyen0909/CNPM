@@ -1,0 +1,14 @@
+.vp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000}
+.vp-modal{background:#fff;border-radius:12px;max-width:520px;width:92%;box-shadow:0 8px 30px rgba(0,0,0,.15);padding:18px 18px}
+.vp-title{margin:0 0 6px 0;font-size:18px;font-weight:700;color:#111827}
+.vp-sub{margin:0 0 12px 0;font-size:13px;color:#6b7280}
+.vp-list{max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;padding:8px}
+.vp-item{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid #f3f4f6}
+.vp-item:last-child{border-bottom:none}
+.vp-item-name{font-size:14px;color:#111827}
+.vp-item-reason{font-size:12px;color:#6b7280;margin-left:8px}
+.vp-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+.vp-btn{border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600}
+.vp-close{background:#e5e7eb;color:#111827}
+.vp-remove{background:#ef4444;color:#fff}
+.vp-btn:disabled{opacity:.6;cursor:not-allowed}
