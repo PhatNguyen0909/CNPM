@@ -21,6 +21,20 @@ const restaurantAPI = {
       throw err;
     }
   },
+
+  async getMerchantById(merchantId) {
+    try {
+      const response = await getPublicApi().get(`/merchants/${merchantId}`);
+      return response?.data;
+    } catch(err) {
+      console.error('restaurantAPI.getMerchantById error', {
+        merchantId,
+        message: err?.message,
+        status: err?.response?.status,
+      });
+      throw err;
+    }
+  },
 };
 
 export default restaurantAPI;

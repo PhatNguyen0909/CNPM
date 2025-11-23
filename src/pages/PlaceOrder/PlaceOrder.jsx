@@ -6,6 +6,7 @@ import ProtectedRoute from '../../components/ProtectedRoute/ProtectedRoute'
 import orderAPI from '../../services/orderAPI'
 import { attachToken } from '../../services/apiClient'
 import { formatVND } from '../../utils/formatCurrency'
+import AddressMapPicker from '../../components/AddressMapPicker/AddressMapPicker'
 
 const PlaceOrder = () => {
 
@@ -17,10 +18,13 @@ const PlaceOrder = () => {
     lastName: "",
     phone: "",
     addressDetail: "",
-    note: ""
+    note: "",
+    latitude: null,
+    longitude: null
   })
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
+  const [showMapPicker, setShowMapPicker] = useState(false)
 
   useEffect(() => {
     if (!token) {
@@ -155,6 +159,8 @@ const PlaceOrder = () => {
       note: [data.note.trim(), ...lineNotes].filter(Boolean).join(' | '),
       deliveryAddress,
       cartItems: orderItems,
+      latitude: data.latitude,
+      longitude: data.longitude,
     };
 
     try {
@@ -222,11 +228,34 @@ const PlaceOrder = () => {
             type="text"
             placeholder='Địa chỉ chi tiết (Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành)'
           />
+          <button 
+            type="button" 
+            className="btn-map-picker"
+            onClick={() => setShowMapPicker(!showMapPicker)}
+          >
+            <span className="map-icon">📍</span>
+            {showMapPicker ? 'Ẩn bản đồ' : 'Chọn vị trí trên bản đồ'}
+          </button>
+          {showMapPicker && (
+            <div style={{ marginTop: '12px' }}>
+              <AddressMapPicker
+                initialAddress={data.addressDetail}
+                onLocationSelect={(location) => {
+                  setData(prev => ({
+                    ...prev,
+                    addressDetail: location.address,
+                    latitude: location.lat,
+                    longitude: location.lng
+                  }));
+                }}
+              />
+            </div>
+          )}
           <textarea
             name='note'
             onChange={onChangeHandler}
             value={data.note}
-            placeholder='Ghi chú cho tài xế (không bắt buộc)'
+            placeholder='Ghi chú cho drone (không bắt buộc)'
             rows={3}
           />
         </div>
