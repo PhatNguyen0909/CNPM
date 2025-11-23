@@ -152,110 +152,117 @@ const deriveMerchantInfoFromOrder = ({ detail, summary, restaurants = [] }) => {
 
 const formatCurrency = (v = 0) => new Intl.NumberFormat('vi-VN').format(v) + 'đ'
 
+const hasFeedback = (summary) => {
+  const source = summary?.feedbacks ?? summary?.raw?.feedbacks
+  return Array.isArray(source) && source.length > 0
+}
+
 const TrackOrder = () => {
   const [searchParams] = useSearchParams()
   const code = searchParams.get('code')
-  const [order, setOrder] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   // Two tabs: 'active' (Theo dõi đơn) | 'history' (Lịch sử)
   const [tab, setTab] = useState('active')
   const { restaurant_list: contextRestaurants } = useContext(StoreContext)
   const restaurants = useMemo(() => Array.isArray(contextRestaurants) ? contextRestaurants : [], [contextRestaurants])
 
   useEffect(() => {
-    let mounted = true
-    const loadList = async () => {
-      setLoading(true)
-      setError(null)
+    let cancelled = false
+    const fetchActive = async () => {
+      setActiveLoading(true)
+      setActiveError(null)
       try {
-        // Fetch all orders once; we will filter per tab on client
-        let all = await orderAPI.getOrders()
-        if (!Array.isArray(all) || all.length === 0) {
-          // fallback: use active set if available
-          const activeOnly = await orderAPI.getActiveOrders()
-          all = Array.isArray(activeOnly) ? activeOnly : []
+        const list = await loadActiveOrders()
+        if (!cancelled) setActiveOrders(list)
+      } catch (err) {
+        if (!cancelled) {
+          setActiveError('Không thể tải danh sách đơn hàng')
+          setActiveOrders([])
         }
-        if (mounted) setOrder(all)
+      } finally {
+        if (!cancelled) setActiveLoading(false)
+      }
+    }
+    fetchActive()
+    return () => { cancelled = true }
+  }, [code, loadActiveOrders])
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchHistory = async () => {
+      setHistoryLoading(true)
+      setHistoryError(null)
+      try {
+        const list = await loadHistoryOrders()
+        if (!cancelled) setHistoryOrders(list)
       } catch (err) {
         console.error('Không thể tải danh sách đơn hàng (initial load)', err)
         if (mounted) setError('Không thể tải danh sách đơn hàng')
       } finally {
-        if (mounted) setLoading(false)
+        if (!cancelled) setHistoryLoading(false)
       }
     }
-    loadList()
-    return () => { mounted = false }
-  }, [code])
+    fetchHistory()
+    return () => { cancelled = true }
+  }, [loadHistoryOrders])
 
-  const normalizeStatus = (s) => String(s || '').trim().toUpperCase()
-  const isHistory = (s) => {
-    const u = normalizeStatus(s)
-    return u === 'COMPLETED' || u === 'CANCELED' || u === 'CANCELLED'
-  }
-  const isActive = (s) => !isHistory(s)
-
-  const activeCount = useMemo(() => Array.isArray(order) ? order.filter(o => isActive(o?.status)).length : 0, [order])
-  const historyCount = useMemo(() => Array.isArray(order) ? order.filter(o => isHistory(o?.status)).length : 0, [order])
-  const filteredOrders = useMemo(() => {
-    if (!Array.isArray(order)) return []
-    if (tab === 'history') return order.filter(o => isHistory(o?.status))
-    return order.filter(o => isActive(o?.status))
-  }, [order, tab])
-
-  const reload = async () => {
-    // simple refetch
-    try {
-      setLoading(true); setError(null)
-      let all = await orderAPI.getOrders()
-      if (!Array.isArray(all) || all.length === 0) {
-        const activeOnly = await orderAPI.getActiveOrders()
-        all = Array.isArray(activeOnly) ? activeOnly : []
+  const reload = useCallback(async () => {
+    if (tab === 'history') {
+      setHistoryLoading(true)
+      setHistoryError(null)
+      try {
+        const list = await loadHistoryOrders()
+        setHistoryOrders(list)
+      } catch (err) {
+        setHistoryError('Không thể tải lịch sử đơn hàng')
+        setHistoryOrders([])
+      } finally {
+        setHistoryLoading(false)
       }
       setOrder(all)
     } catch (err) {
       console.error('Không thể tải danh sách đơn hàng (reload)', err)
       setError('Không thể tải danh sách đơn hàng')
     } finally {
-      setLoading(false)
+      setActiveLoading(false)
     }
-  }
+  }, [tab, loadActiveOrders, loadHistoryOrders])
 
-  if (loading) return <div className="track-page"><p>Đang tải...</p></div>
-  if (error) return <div className="track-page"><p className="error">{error}</p></div>
-  if (!filteredOrders || filteredOrders.length === 0) return (
-    <div className="track-page">
-      <div className="track-tabs">
-        <button
-          type="button"
-          className={`track-tab ${tab==='active' ? 'active':''}`}
-          onClick={() => setTab('active')}
-        >
-          <span>Theo dõi đơn</span>
-          <span className="badge">{activeCount}</span>
-        </button>
-        <button
-          type="button"
-          className={`track-tab ${tab==='history' ? 'active':''}`}
-          onClick={() => setTab('history')}
-        >
-          <span>Lịch sử đơn</span>
-          <span className="badge">{historyCount}</span>
-        </button>
-        <button type="button" className="track-refresh" onClick={reload} disabled={loading}>
-          {loading ? 'Đang tải…' : 'Làm mới'}
-        </button>
+  const activeCount = activeOrders.length
+  const historyCount = historyOrders.length
+  const filteredOrders = useMemo(() => (tab === 'history' ? historyOrders : activeOrders), [tab, activeOrders, historyOrders])
+  const currentLoading = tab === 'history' ? historyLoading : activeLoading
+  const currentError = tab === 'history' ? historyError : activeError
+  const emptyMessage = tab === 'history' ? 'Bạn chưa có đơn hàng trong lịch sử.' : 'Không có đơn hàng đang theo dõi.'
+
+  useEffect(() => {
+    if (!flashMessage) return
+    const timer = setTimeout(() => setFlashMessage(null), 4000)
+    return () => clearTimeout(timer)
+  }, [flashMessage])
+
+  const handleFlashDismiss = useCallback(() => setFlashMessage(null), [])
+
+  const handleFeedbackSuccess = useCallback((message) => {
+    setFlashType('success')
+    setFlashMessage(message || 'Đánh giá đơn hàng thành công!')
+  }, [])
+
+  const flashPortal = flashMessage ? createPortal(
+    <div className="track-alert-overlay" role="presentation" onClick={handleFlashDismiss}>
+      <div
+        className={`track-alert track-alert-${flashType} track-alert-popup`}
+        role="alert"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {flashMessage}
       </div>
-       
-      <p>Không có đơn hàng.</p>
-    </div>
-    
-    
-  )
+    </div>,
+    document.body
+  ) : null
 
-  // Active orders only; history is accessible via the third tab link
   return (
     <div className="track-page">
+      {flashPortal}
       <div className="track-tabs">
         <button
           type="button"
@@ -273,10 +280,11 @@ const TrackOrder = () => {
           <span>Lịch sử đơn</span>
           <span className="badge">{historyCount}</span>
         </button>
-        <button type="button" className="track-refresh" onClick={reload} disabled={loading}>
-          {loading ? 'Đang tải…' : 'Làm mới'}
+        <button type="button" className="track-refresh" onClick={reload} disabled={currentLoading}>
+          {currentLoading ? 'Đang tải…' : 'Làm mới'}
         </button>
       </div>
+      {currentError && <p className="error">{currentError}</p>}
 
       <div className="orders-list">
         {filteredOrders.map(o => (
@@ -645,14 +653,17 @@ function OrderAccordion({ orderSummary, restaurants = [] }){
 
 export default TrackOrder
 
-function HistoryAccordion({ orderSummary }){
+function HistoryAccordion({ orderSummary, onFeedbackSuccess }){
   const [open, setOpen] = useState(false)
-  const [detail, setDetail] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [err, setErr] = useState(null)
+  const [detail, setDetail] = useState(orderSummary)
   const [rateOpen, setRateOpen] = useState(false)
-  const [hasRated, setHasRated] = useState(false)
+  const [hasRated, setHasRated] = useState(() => hasFeedback(orderSummary))
   const [msg, setMsg] = useState('')
+
+  useEffect(() => {
+    setDetail(orderSummary)
+    setHasRated(hasFeedback(orderSummary))
+  }, [orderSummary])
 
   const statusText = useMemo(() => {
     const raw = String(orderSummary.status || '').toUpperCase()
@@ -661,7 +672,7 @@ function HistoryAccordion({ orderSummary }){
     return raw || '-'
   }, [orderSummary.status])
 
-  const toggle = async () => {
+  const toggle = () => {
     setOpen(prev => !prev)
     if (!open && !detail){
       setLoading(true); setErr(null)
@@ -689,10 +700,8 @@ function HistoryAccordion({ orderSummary }){
       </div>
       {open && (
         <div className="acc-body">
-          {loading && <p>Đang tải...</p>}
-          {err && <p className="error">{err}</p>}
           {msg && <p>{msg}</p>}
-          {detail && (
+          {detail ? (
             <div>
               <div className="track-card">
                 <div className="status-current">Trạng thái đơn: <strong>{statusText}</strong></div>
@@ -762,18 +771,22 @@ function HistoryAccordion({ orderSummary }){
                 </div>
               )}
             </div>
+          ) : (
+            <p>Không tìm thấy dữ liệu chi tiết cho đơn hàng này.</p>
           )}
         </div>
       )}
-      <RatingModal
+      <FeedbackModal
         open={rateOpen}
         onClose={()=>setRateOpen(false)}
-        onSubmit={async (rating)=>{
+        orderId={detail?.id || orderSummary.id || orderSummary._id || orderSummary.orderId}
+        onSubmit={async (feedbackData)=>{
           try{
-            const id = detail?.id || orderSummary.id || orderSummary._id || orderSummary.orderId
-            await orderAPI.rateOrder(id, rating)
+            // feedbackData = { orderId, rating, comment?, imgFiles? }
+            await orderAPI.giveFeedback(feedbackData)
             setHasRated(true)
             setMsg('Cảm ơn bạn đã đánh giá!')
+            onFeedbackSuccess?.('Đánh giá đơn hàng thành công!')
             setRateOpen(false)
           }catch (_err){
             const m = _err?.response?.data?.message || _err?.message || 'Gửi đánh giá thất bại'

@@ -212,6 +212,7 @@ const normalizeOrder = (input) => {
     createdAt,
     updatedAt,
     items,
+    feedbacks: Array.isArray(o.feedbacks) ? o.feedbacks : [],
     raw: o,
   };
 };
@@ -241,8 +242,20 @@ const orderAPI = {
     if (!Array.isArray(all)) return [];
     return all.filter(o => {
       const st = String(o.status).toUpperCase();
-      return st !== 'COMPLETED' && st !== 'CANCELED';
+      return st !== 'COMPLETED' && st !== 'CANCELED' && st !== 'CANCELLED';
     });
+  },
+  async getOrderHistory() {
+    const res = await api.get('/my-order-history');
+    const raw = res?.data?.data ?? res?.data;
+    const candidateArrays = [raw, raw?.items, raw?.orders, raw?.content, raw?.results];
+    for (const arr of candidateArrays) {
+      if (Array.isArray(arr)) return arr.map(normalizeOrder);
+      if (Array.isArray(arr?.items)) return arr.items.map(normalizeOrder);
+    }
+    if (Array.isArray(raw)) return raw.map(normalizeOrder);
+    if (raw && typeof raw === 'object') return [normalizeOrder(raw)];
+    return [];
   },
   async getOrderByCode(code) {
     if (!code) return null;
@@ -305,6 +318,42 @@ const orderAPI = {
       throw new Error('Điểm đánh giá không hợp lệ');
     }
     const res = await api.post('/rating', { orderId, rating: r });
+    return res?.data;
+  },
+  /**
+   * Give feedback on a completed order with rating, comment, and images.
+   * @param {Object} feedbackData - { orderId, rating, comment?, imgFiles? }
+   * @returns {Promise}
+   */
+  async giveFeedback(feedbackData) {
+    const { orderId, rating, comment, imgFiles } = feedbackData || {};
+    
+    if (!orderId) throw new Error('Thiếu orderId');
+    const r = Number(rating);
+    if (!Number.isFinite(r) || r < 1 || r > 5) {
+      throw new Error('Điểm đánh giá không hợp lệ');
+    }
+
+    // Create FormData for multipart/form-data
+    const formData = new FormData();
+    formData.append('orderId', orderId);
+    formData.append('rating', r);
+    
+    if (comment && String(comment).trim()) {
+      formData.append('comment', String(comment).trim());
+    }
+    
+    if (Array.isArray(imgFiles) && imgFiles.length > 0) {
+      imgFiles.forEach((file) => {
+        formData.append('imgFiles', file);
+      });
+    }
+
+    const res = await api.post('/give-feedback', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return res?.data;
   }
 };

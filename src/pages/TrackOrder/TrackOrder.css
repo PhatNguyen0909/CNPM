@@ -16,6 +16,14 @@
 .track-tab.active .badge{ background:#fdba74; color:#7c2d12 }
 .track-refresh{ margin-left:auto; padding:10px 14px; border-radius:12px; border:1px solid #f59e0b; color:#b45309; background:#fff7ed; font-weight:600 }
 .track-refresh:disabled{ opacity:.6 }
+.track-alert{ padding:16px 20px; border-radius:16px; font-weight:600; display:flex; align-items:center; gap:12px; border:1px solid transparent; box-shadow:0 12px 40px rgba(15,23,42,0.25); font-size:15px; text-align:center; }
+.track-alert-success{ background:#dcfce7; color:#166534; border-color:#bbf7d0 }
+.track-alert-error{ background:#fee2e2; color:#b91c1c; border-color:#fecaca }
+.track-alert-overlay{ position:fixed; inset:0; background:rgba(15,23,42,0.35); display:flex; align-items:center; justify-content:center; z-index:1200; animation:fadeOverlay .2s ease-out forwards; }
+.track-alert-popup{ max-width:360px; width:calc(100% - 48px); animation:scaleIn .24s ease-out forwards; }
+
+@keyframes fadeOverlay{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes scaleIn{ from{ transform:scale(.95); opacity:0; } to{ transform:scale(1); opacity:1; } }
 .order-code{ 
 	color:#6b7280;
  }
