@@ -22,7 +22,8 @@ const normalizeProxyBase = (url) => {
 };
 
 const proxyBase = normalizeProxyBase(envProxy);
-const API_BASE_URL = proxyBase || envApi || '/potato-api';
+// Prefer envApi (e.g. /potato-api) to use the proxy, otherwise fall back to direct proxyBase
+const API_BASE_URL = envApi || proxyBase || '/potato-api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
