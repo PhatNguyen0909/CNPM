@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './DroneMap.css';
+import { updateDroneLocation } from '../../services/droneAdminAPI';
 
 const DroneMap = ({ 
   merchantLocation, // { lat, lng, name }
   deliveryLocation, // { lat, lng, address }
   orderStatus = 'CONFIRMED',
-  autoAnimate = true 
+  autoAnimate = true,
+  droneId,
+  droneStatus
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -186,6 +189,45 @@ const DroneMap = ({
     };
   }, [mapReady, merchantLat, merchantLng, deliveryLat, deliveryLng, orderStatus, autoAnimate]);
 
+  // Animate drone returning to station (no external API, just straight line)
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current || !droneMarkerRef.current) return;
+    if (orderStatus !== 'RETURNING' || !droneId) return;
+    let cancelled = false;
+    let step = 0;
+    const N = 40; // Số bước chia nhỏ
+    // Tính các điểm trên đường thẳng từ delivery về merchant
+    const points = [];
+    for (let i = 0; i <= N; i++) {
+      const lat = deliveryLat + (merchantLat - deliveryLat) * (i / N);
+      const lng = deliveryLng + (merchantLng - deliveryLng) * (i / N);
+      points.push([lat, lng]);
+    }
+    // Vẽ polyline
+    if (polylineRef.current) polylineRef.current.remove();
+    polylineRef.current = window.L.polyline(points, {
+      color: '#f59e42', weight: 4, opacity: 0.8, dashArray: '6, 8', lineJoin: 'round'
+    }).addTo(mapInstanceRef.current);
+    // Animate drone theo các điểm
+    const intervalId = setInterval(async () => {
+      if (cancelled) return;
+      if (step >= points.length) {
+        clearInterval(intervalId);
+        return;
+      }
+      const [lat, lng] = points[step];
+      droneMarkerRef.current.setLatLng([lat, lng]);
+      try {
+        await updateDroneLocation(droneId, { lat, lng });
+      } catch {}
+      step++;
+    }, 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [mapReady, orderStatus, droneId, deliveryLat, deliveryLng, merchantLat, merchantLng]);
+
   // Update drone position based on order status
   useEffect(() => {
     if (!droneMarkerRef.current) return;
@@ -196,14 +238,12 @@ const DroneMap = ({
 
     switch (orderStatus) {
       case 'CONFIRMED':
-        // Drone at merchant
         droneMarkerRef.current.setLatLng(merchantCoords);
         droneMarkerRef.current.bindPopup('🏪 Drone đang chờ tại cửa hàng').openPopup();
         setDronePosition(0);
         break;
       case 'DRONE_ARRIVED':
       case 'COMPLETED':
-        // Drone at delivery location
         droneMarkerRef.current.setLatLng(deliveryCoords);
         droneMarkerRef.current.bindPopup('✅ Drone đã đến!').openPopup();
         setDronePosition(100);
@@ -213,64 +253,15 @@ const DroneMap = ({
     }
   }, [orderStatus, merchantLat, merchantLng, deliveryLat, deliveryLng]);
 
-  if (!mapLoaded) {
-    return (
-      <div className="drone-map-loading">
-        <div className="loading-spinner"></div>
-        <p>Đang tải bản đồ...</p>
-      </div>
-    );
-  }
-
-  if (merchantLat == null || merchantLng == null || deliveryLat == null || deliveryLng == null) {
-    return (
-      <div className="drone-map-error">
-        <p>⚠️ Thiếu thông tin vị trí để hiển thị bản đồ</p>
-      </div>
-    );
-  }
-
-  const getStatusText = () => {
-    switch (orderStatus) {
-      case 'CONFIRMED':
-        return '🏪 Drone đang chờ tại cửa hàng';
-      case 'DELIVERING':
-        return '✈️ Drone đang bay đến địa chỉ giao hàng';
-      case 'DRONE_ARRIVED':
-        return '📍 Drone đã đến - Vui lòng nhận hàng';
-      case 'COMPLETED':
-        return '✅ Đã hoàn thành giao hàng';
-      default:
-        return 'ℹ️ Đang xử lý đơn hàng';
-    }
-  };
-
   return (
     <div className="drone-map-container">
-      <div className="drone-map-header">
-        <div className="status-text">{getStatusText()}</div>
-        {orderStatus === 'DELIVERING' && (
-          <div className="progress-info">
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${dronePosition}%` }}></div>
-            </div>
-            <div className="progress-text">{dronePosition}%</div>
-          </div>
-        )}
-      </div>
-      <div ref={mapRef} className="drone-map"></div>
-      <div className="drone-map-legend">
-        <div className="legend-item">
-          <span className="legend-icon red">🏪</span>
-          <span className="legend-text">{merchantLocation.name || 'Cửa hàng'}</span>
+      <div className="map" ref={mapRef} style={{ height: '100vh' }} />
+      <div className="drone-info">
+        <div className="drone-status">
+          Trạng thái đơn hàng: <strong>{orderStatus}</strong>
         </div>
-        <div className="legend-item">
-          <span className="legend-icon blue">✈️</span>
-          <span className="legend-text">Drone giao hàng</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-icon green">📍</span>
-          <span className="legend-text">Địa chỉ giao hàng</span>
+        <div className="drone-position">
+          Vị trí drone: {dronePosition}%
         </div>
       </div>
     </div>
