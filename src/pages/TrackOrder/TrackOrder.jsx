@@ -1,8 +1,9 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import './TrackOrder.css'
 import { useSearchParams } from 'react-router-dom'
 import orderAPI from '../../services/orderAPI'
-import RatingModal from '../../components/RatingModal/RatingModal'
+import FeedbackModal from '../../components/FeedbackModal/FeedbackModal'
 import DroneMap from '../../components/DroneMap/DroneMap'
 import restaurantAPI from '../../services/restaurantAPI'
 import { StoreContext } from '../../context/StoreContext'
@@ -165,6 +166,37 @@ const TrackOrder = () => {
   const { restaurant_list: contextRestaurants } = useContext(StoreContext)
   const restaurants = useMemo(() => Array.isArray(contextRestaurants) ? contextRestaurants : [], [contextRestaurants])
 
+  const [activeOrders, setActiveOrders] = useState([])
+  const [activeLoading, setActiveLoading] = useState(false)
+  const [activeError, setActiveError] = useState(null)
+  const [historyOrders, setHistoryOrders] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState(null)
+  const [flashMessage, setFlashMessage] = useState(null)
+  const [flashType, setFlashType] = useState('info')
+  const [mounted, setMounted] = useState(true)
+  // Generic error state used in some places
+  const [error, setError] = useState(null) 
+  // activeError is used for the active tab, but 'error' might be used for general page errors or the 'active' tab fallback.
+  // Looking at usage: setError('Không thể tải danh sách đơn hàng') in reload catch block.
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
+
+  const loadActiveOrders = useCallback(async () => {
+    if (code) {
+      const order = await orderAPI.getOrderByCode(code)
+      return order ? [order] : []
+    }
+    return await orderAPI.getActiveOrders()
+  }, [code])
+
+  const loadHistoryOrders = useCallback(async () => {
+    return await orderAPI.getOrderHistory()
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     const fetchActive = async () => {
@@ -196,7 +228,7 @@ const TrackOrder = () => {
         if (!cancelled) setHistoryOrders(list)
       } catch (err) {
         console.error('Không thể tải danh sách đơn hàng (initial load)', err)
-        if (mounted) setError('Không thể tải danh sách đơn hàng')
+        if (!cancelled) setHistoryError('Không thể tải danh sách đơn hàng')
       } finally {
         if (!cancelled) setHistoryLoading(false)
       }
@@ -218,12 +250,18 @@ const TrackOrder = () => {
       } finally {
         setHistoryLoading(false)
       }
-      setOrder(all)
-    } catch (err) {
-      console.error('Không thể tải danh sách đơn hàng (reload)', err)
-      setError('Không thể tải danh sách đơn hàng')
-    } finally {
-      setActiveLoading(false)
+    } else {
+      setActiveLoading(true)
+      setActiveError(null)
+      try {
+        const list = await loadActiveOrders()
+        setActiveOrders(list)
+      } catch (err) {
+        console.error('Không thể tải danh sách đơn hàng (reload)', err)
+        setActiveError('Không thể tải danh sách đơn hàng')
+      } finally {
+        setActiveLoading(false)
+      }
     }
   }, [tab, loadActiveOrders, loadHistoryOrders])
 
@@ -672,7 +710,7 @@ function HistoryAccordion({ orderSummary, onFeedbackSuccess }){
     return raw || '-'
   }, [orderSummary.status])
 
-  const toggle = () => {
+  const toggle = async () => {
     setOpen(prev => !prev)
     if (!open && !detail){
       setLoading(true); setErr(null)

@@ -25,6 +25,7 @@ const PlaceOrder = () => {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [showMapPicker, setShowMapPicker] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('COD')
 
   useEffect(() => {
     if (!token) {
@@ -168,10 +169,46 @@ const PlaceOrder = () => {
       // Ensure Authorization header is present on this critical call
       if (token) attachToken(token);
       const response = await orderAPI.createOrder(payload);
-      const message = response?.message ?? 'Đặt hàng thành công! Cảm ơn bạn đã sử dụng dịch vụ.';
-      alert(message);
-      clearCart();
-      navigate('/');
+
+      if (paymentMethod === 'VNPay') {
+        const subtotal = Number(getTotalCartAmount() || 0);
+        const shippingFee = subtotal === 0 ? 0 : 15000;
+        const grandTotal = subtotal + shippingFee;
+
+        try {
+          // VNPay requires integer amount
+          const amount = Math.round(grandTotal);
+          const result = await orderAPI.createPaymentUrl(amount);
+          console.log("VNPay response:", result);
+          
+          let paymentUrl = null;
+          if (typeof result === 'string') {
+            paymentUrl = result;
+          } else if (typeof result === 'object' && result !== null) {
+            paymentUrl = result.url || result.paymentUrl || result.vnpUrl || result.data;
+          }
+
+          if (paymentUrl && typeof paymentUrl === 'string') {
+            clearCart();
+            window.location.href = paymentUrl;
+            return;
+          } else {
+            console.error("Invalid payment URL response:", result);
+            alert('Đơn hàng đã được tạo nhưng không thể lấy link thanh toán VNPay.');
+            // Keep user on page to choose another method if they want
+            setSubmitting(false);
+          }
+        } catch (payErr) {
+          console.error('VNPay error:', payErr);
+          alert('Đơn hàng đã được tạo nhưng xảy ra lỗi khi kết nối VNPay.');
+          setSubmitting(false);
+        }
+      } else {
+        const message = response?.message ?? 'Đặt hàng thành công! Cảm ơn bạn đã sử dụng dịch vụ.';
+        alert(message);
+        clearCart();
+        navigate('/');
+      }
     } catch (error) {
       console.error('Không thể tạo đơn hàng:', error);
       const status = error?.response?.status;
@@ -306,6 +343,26 @@ const PlaceOrder = () => {
             <div className='row'>
               <div className='label'>Phí giao hàng</div>
               <div className='value'>{formatVND(shippingFee)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="payment-method">
+          <div className="card-title">Phương thức thanh toán</div>
+          <div className="payment-options">
+            <div 
+              className={`payment-option ${paymentMethod === 'COD' ? 'selected' : ''}`}
+              onClick={() => setPaymentMethod('COD')}
+            >
+              <div className="radio-circle"></div>
+              <span>Thanh toán khi nhận hàng (COD)</span>
+            </div>
+            <div 
+              className={`payment-option ${paymentMethod === 'VNPay' ? 'selected' : ''}`}
+              onClick={() => setPaymentMethod('VNPay')}
+            >
+              <div className="radio-circle"></div>
+              <span>Thanh toán qua VNPay</span>
             </div>
           </div>
         </div>

@@ -16,8 +16,19 @@ const StoreContextProvider = (props) => {
   const [cartItems,setCartItems] = useState({})
   // New cart lines to support options per item
   const [cartLines, setCartLines] = useState([]);
-  const [token, setToken] = useState("")
-  const [user, setUser] = useState(null)
+  const [token, setToken] = useState(() => {
+    const t = getCookie("auth_token") || "";
+    if (t) attachToken(t);
+    return t;
+  });
+  const [user, setUser] = useState(() => {
+    const u = getCookie("user_data");
+    try {
+      return u ? JSON.parse(u) : null;
+    } catch {
+      return null;
+    }
+  });
   const [restaurants, setRestaurants] = useState(staticRestaurants || []);
   const [isFetchingRestaurants, setIsFetchingRestaurants] = useState(false);
   const [foods, setFoods] = useState(staticFoodList || []);

@@ -54,11 +54,11 @@ export default defineConfig({
     ],
     proxy: {
       '/potato-api': {
-        target: process.env.VITE_PROXY_TARGET || 'https://themselves-resolve-routing-ricky.trycloudflare.com',
+        target: process.env.VITE_PROXY_TARGET || 'https://trustees-logical-seed-modes.trycloudflare.com/potato-api',
         changeOrigin: true,
         secure: false,
         ws: false,
-        rewrite: (path) => path.replace(/^\/potato-api/, '/potato-api'),
+        rewrite: (path) => path.replace(/^\/potato-api/, ''),
       },
     },
   },

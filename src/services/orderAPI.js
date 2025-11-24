@@ -355,6 +355,18 @@ const orderAPI = {
       },
     });
     return res?.data;
+  },
+
+  /**
+   * Create VNPay payment URL
+   * @param {number} amount
+   * @returns {Promise<string>} payment url
+   */
+  async createPaymentUrl(amount) {
+    const res = await api.get('/create-payment-url', {
+      params: { amount }
+    });
+    return res?.data;
   }
 };
 
