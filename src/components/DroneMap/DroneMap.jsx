@@ -7,8 +7,7 @@ const DroneMap = ({
   deliveryLocation, // { lat, lng, address }
   orderStatus = 'CONFIRMED',
   autoAnimate = true,
-  droneId,
-  droneStatus
+  droneId
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -18,6 +17,7 @@ const DroneMap = ({
   const [mapReady, setMapReady] = useState(false);
   const [dronePosition, setDronePosition] = useState(0); // 0-100%
   const animationRef = useRef(null);
+  const lastReturnSyncRef = useRef(0);
   const merchantLat = merchantLocation?.lat;
   const merchantLng = merchantLocation?.lng;
   const merchantName = merchantLocation?.name;
@@ -189,44 +189,88 @@ const DroneMap = ({
     };
   }, [mapReady, merchantLat, merchantLng, deliveryLat, deliveryLng, orderStatus, autoAnimate]);
 
-  // Animate drone returning to station (no external API, just straight line)
+  // Animate drone returning to station (client-only mock path with API sync)
   useEffect(() => {
     if (!mapReady || !mapInstanceRef.current || !droneMarkerRef.current) return;
-    if (orderStatus !== 'RETURNING' || !droneId) return;
-    let cancelled = false;
-    let step = 0;
-    const N = 40; // Số bước chia nhỏ
-    // Tính các điểm trên đường thẳng từ delivery về merchant
-    const points = [];
-    for (let i = 0; i <= N; i++) {
-      const lat = deliveryLat + (merchantLat - deliveryLat) * (i / N);
-      const lng = deliveryLng + (merchantLng - deliveryLng) * (i / N);
-      points.push([lat, lng]);
+    if (orderStatus !== 'RETURNING' || !autoAnimate) return;
+    if (merchantLat == null || merchantLng == null || deliveryLat == null || deliveryLng == null) return;
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
     }
-    // Vẽ polyline
-    if (polylineRef.current) polylineRef.current.remove();
-    polylineRef.current = window.L.polyline(points, {
-      color: '#f59e42', weight: 4, opacity: 0.8, dashArray: '6, 8', lineJoin: 'round'
-    }).addTo(mapInstanceRef.current);
-    // Animate drone theo các điểm
-    const intervalId = setInterval(async () => {
-      if (cancelled) return;
-      if (step >= points.length) {
-        clearInterval(intervalId);
-        return;
+    lastReturnSyncRef.current = 0;
+
+    const startCoords = [deliveryLat, deliveryLng];
+    const endCoords = [merchantLat, merchantLng];
+    droneMarkerRef.current.setLatLng(startCoords);
+
+    const angle = Math.atan2(
+      endCoords[1] - startCoords[1],
+      endCoords[0] - startCoords[0]
+    ) * (180 / Math.PI);
+
+    const applyRotation = () => {
+      const droneElement = droneMarkerRef.current?.getElement();
+      if (!droneElement) return;
+      const droneIcon = droneElement.querySelector('.drone-icon');
+      if (droneIcon) {
+        droneIcon.style.transform = `rotate(${angle + 90}deg)`;
       }
-      const [lat, lng] = points[step];
-      droneMarkerRef.current.setLatLng([lat, lng]);
-      try {
-        await updateDroneLocation(droneId, { lat, lng });
-      } catch {}
-      step++;
-    }, 1000);
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
     };
-  }, [mapReady, orderStatus, droneId, deliveryLat, deliveryLng, merchantLat, merchantLng]);
+    applyRotation();
+
+    if (polylineRef.current) {
+      polylineRef.current.remove();
+    }
+    polylineRef.current = window.L.polyline([startCoords, endCoords], {
+      color: '#f59e42',
+      weight: 4,
+      opacity: 0.85,
+      dashArray: '6, 8',
+      lineJoin: 'round',
+    }).addTo(mapInstanceRef.current);
+
+    const duration = 30000; // 30s return flight
+    const startTime = Date.now();
+    const SYNC_INTERVAL = 3000;
+
+    const animateReturn = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const currentLat = startCoords[0] + (endCoords[0] - startCoords[0]) * progress;
+      const currentLng = startCoords[1] + (endCoords[1] - startCoords[1]) * progress;
+
+      droneMarkerRef.current.setLatLng([currentLat, currentLng]);
+      setDronePosition(Math.round(progress * 100));
+
+      if (droneId) {
+        const now = Date.now();
+        if (now - lastReturnSyncRef.current >= SYNC_INTERVAL || lastReturnSyncRef.current === 0) {
+          lastReturnSyncRef.current = now;
+          updateDroneLocation(droneId, { lat: currentLat, lng: currentLng }).catch((err) => {
+            console.warn('Không thể cập nhật toạ độ drone khi RETURNING', err);
+          });
+        }
+      }
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animateReturn);
+      } else {
+        if (droneId) {
+          updateDroneLocation(droneId, { lat: endCoords[0], lng: endCoords[1] }).catch(() => {});
+        }
+        droneMarkerRef.current.bindPopup('🏠 Drone đã về trạm!').openPopup();
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(animateReturn);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [mapReady, orderStatus, autoAnimate, merchantLat, merchantLng, deliveryLat, deliveryLng]);
 
   // Update drone position based on order status
   useEffect(() => {

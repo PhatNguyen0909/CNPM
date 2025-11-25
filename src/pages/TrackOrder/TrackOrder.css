@@ -92,3 +92,31 @@
 .order-accordion.open .acc-body {border:2px solid #fdba74;}
 .order-accordion:hover {box-shadow:0 12px 12px rgba(2,6,23,0.1);background-color:#fcfbfb;}
 .order-accordion.open  {box-shadow:0 4px 12px rgba(2,6,23,0.1);}
+
+.track-confirm-btn{
+	margin-top:16px;
+	width:100%;
+	border:none;
+	border-radius:999px;
+	padding:12px 18px;
+	background:#10b981;
+	color:#fff;
+	font-weight:700;
+	cursor:pointer;
+	transition:background 0.2s ease;
+}
+
+.track-confirm-btn:hover:not(:disabled){
+	background:#0d9468;
+}
+
+.track-confirm-btn:disabled{
+	opacity:.7;
+	cursor:not-allowed;
+}
+
+.track-confirm-error{
+	margin-top:8px;
+	color:#b91c1c;
+	font-size:13px;
+}

@@ -67,6 +67,83 @@ const extractCoordsFrom = (source) => {
   return { lat, lng };
 };
 
+const normalizeDroneInfo = (order) => {
+  if (!order || typeof order !== 'object') return null;
+  const droneSources = [
+    order.drone,
+    order.droneInfo,
+    order.drone_info,
+    order.droneData,
+    order.drone_data,
+    order.droneDetails,
+    order.drone_details,
+    order.assignment?.drone,
+    order.delivery?.drone,
+    order.shipping?.drone,
+  ].filter(Boolean);
+
+  const droneObj = droneSources.find((src) => typeof src === 'object') || {};
+  const id = firstDefined(
+    order.droneId,
+    order.drone_id,
+    order.droneID,
+    droneObj.id,
+    droneObj.ID,
+    droneObj.droneId,
+    droneObj.drone_id,
+  );
+  const code = firstDefined(
+    order.droneCode,
+    order.drone_code,
+    droneObj.code,
+    droneObj.droneCode,
+    droneObj.drone_code,
+  );
+  const status = firstDefined(
+    order.droneStatus,
+    order.drone_status,
+    droneObj.status,
+    droneObj.state,
+  );
+  const latitude = toCoordNumber(firstDefined(
+    order.droneLatitude,
+    order.droneLat,
+    order.drone_latitude,
+    droneObj.latitude,
+    droneObj.lat,
+    droneObj.latitudeDegrees,
+    droneObj.latitude_degrees,
+  ));
+  const longitude = toCoordNumber(firstDefined(
+    order.droneLongitude,
+    order.droneLong,
+    order.drone_longitude,
+    droneObj.longitude,
+    droneObj.lng,
+    droneObj.longitudeDegrees,
+    droneObj.longitude_degrees,
+  ));
+
+  if (
+    id === undefined &&
+    code === undefined &&
+    status === undefined &&
+    latitude === undefined &&
+    longitude === undefined
+  ) {
+    return null;
+  }
+
+  return {
+    id,
+    code,
+    status: status ? String(status).toUpperCase() : undefined,
+    latitude,
+    longitude,
+    raw: droneObj,
+  };
+};
+
 // Normalize line option from various shapes
 const normalizeOption = (opt) => {
   if (!opt) return null;
@@ -194,6 +271,8 @@ const normalizeOrder = (input) => {
     }
   }
 
+  const drone = normalizeDroneInfo(o);
+
   return {
     id: o[idKey] ?? undefined,
     code: String(o[codeKey] ?? o["order_code"] ?? '').trim() || undefined,
@@ -213,6 +292,10 @@ const normalizeOrder = (input) => {
     updatedAt,
     items,
     feedbacks: Array.isArray(o.feedbacks) ? o.feedbacks : [],
+    drone,
+    droneId: drone?.id,
+    droneCode: drone?.code,
+    droneStatus: drone?.status,
     raw: o,
   };
 };
