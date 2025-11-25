@@ -56,7 +56,9 @@ const Navbar = ({setShowLogin}) => {
     <>
     <div className='navbar'>
       <Link to = '/'><img src = {assets.logo} alt = " " className="logo"/></Link>
-     
+      <ul className="navbar-menu">
+        <li className="navbar-search-wrap"><SearchBar /></li>
+      </ul>
       <div className="navbar-right">
         <div className="navbar-search-icon">
            <img

@@ -1,11 +1,11 @@
 .navbar{
     padding: 20px 0px;
+    display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 .navbar .logo{
     width: 150px;
-    align-items: center;
-    margin-left: 50%;
 }
 .navbar-menu{
     display: flex;
@@ -93,9 +93,7 @@
 }
 @media(max-width:900px){
     .navbar .logo{
-        width: 120px;  
-        margin-left: 50%;
-      
+        width: 120px;    
     }
     .navbar-menu{
         gap: 15px;
