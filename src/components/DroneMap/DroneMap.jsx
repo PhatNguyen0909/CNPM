@@ -143,7 +143,7 @@ const DroneMap = ({
     const deliveryCoords = [deliveryLat, deliveryLng];
 
     let progress = 0;
-    const duration = 10000; // 10 seconds for full journey
+    const duration = 5000; // 5 seconds for full journey
     const startTime = Date.now();
 
     const animate = () => {
@@ -230,7 +230,7 @@ const DroneMap = ({
       lineJoin: 'round',
     }).addTo(mapInstanceRef.current);
 
-    const duration = 30000; // 30s return flight
+    const duration = 10000; // 10s return flight
     const startTime = Date.now();
     const SYNC_INTERVAL = 3000;
 
