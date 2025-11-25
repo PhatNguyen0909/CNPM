@@ -3,12 +3,11 @@ import { createPortal } from 'react-dom'
 import './TrackOrder.css'
 import { useSearchParams } from 'react-router-dom'
 import orderAPI from '../../services/orderAPI'
+import { confirmOrderReceived } from '../../services/orderConfirmAPI'
 import FeedbackModal from '../../components/FeedbackModal/FeedbackModal'
 import DroneMap from '../../components/DroneMap/DroneMap'
 import restaurantAPI from '../../services/restaurantAPI'
 import { StoreContext } from '../../context/StoreContext'
-import { confirmOrderReceived } from '../../services/orderConfirmAPI'
-import { updateDroneLocation } from '../../services/droneAdminAPI'
 
 // Order status flow (3 steps)
 const STATUS_FLOW = ['CONFIRMED', 'DELIVERING','COMPLETED']
@@ -330,7 +329,12 @@ const TrackOrder = () => {
         {filteredOrders.map(o => (
           tab === 'history'
             ? <HistoryAccordion key={o.id || o._id || o.code} orderSummary={o} />
-            : <OrderAccordion key={o.id || o._id || o.code} orderSummary={o} restaurants={restaurants} />
+            : <OrderAccordion
+                key={o.id || o._id || o.code}
+                orderSummary={o}
+                restaurants={restaurants}
+                onAfterConfirm={reload}
+              />
         ))}
       </div>
    
@@ -338,7 +342,7 @@ const TrackOrder = () => {
   )
 }
 
-function OrderAccordion({ orderSummary, restaurants = [] }){
+function OrderAccordion({ orderSummary, restaurants = [], onAfterConfirm }){
   const [open, setOpen] = useState(false)
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -347,50 +351,9 @@ function OrderAccordion({ orderSummary, restaurants = [] }){
   const [deliveryCoords, setDeliveryCoords] = useState(null)
   const [geocoding, setGeocoding] = useState(false)
   const [merchantGuessInfo, setMerchantGuessInfo] = useState(null)
-  const [confirming, setConfirming] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-  // Giả lập trạng thái drone và station (cần truyền thực tế nếu có)
-  const [droneStatus, setDroneStatus] = useState(null);
-  const [droneId, setDroneId] = useState(null);
-  const [droneCoords, setDroneCoords] = useState(null);
-  const [stationCoords, setStationCoords] = useState(null);
-
-  // Lấy drone info từ detail nếu có
-  useEffect(() => {
-    if (detail && detail.raw && detail.raw.drone) {
-      setDroneStatus(detail.raw.drone.status);
-      setDroneId(detail.raw.drone.id || detail.raw.drone.droneId);
-      setDroneCoords({ lat: detail.raw.drone.latitude, lng: detail.raw.drone.longitude });
-      // Station là merchantCoords
-      setStationCoords(merchantCoords);
-    }
-  }, [detail, merchantCoords]);
-
-  // Đồng bộ vị trí drone khi RETURNING
-  useEffect(() => {
-    let intervalId;
-    if (String(detail?.status).toUpperCase() === 'COMPLETED' && droneStatus === 'RETURNING' && droneId && stationCoords) {
-      let current = { ...droneCoords };
-      const station = { ...stationCoords };
-      intervalId = setInterval(async () => {
-        // Di chuyển từng bước về station (giả lập)
-        const step = 0.001;
-        const dx = station.lat - current.lat;
-        const dy = station.lng - current.lng;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 0.0005) {
-          clearInterval(intervalId);
-          return;
-        }
-        current.lat += dx * step;
-        current.lng += dy * step;
-        try {
-          await updateDroneLocation(droneId, current);
-        } catch {}
-      }, 1000);
-    }
-    return () => intervalId && clearInterval(intervalId);
-  }, [detail?.status, droneStatus, droneId, droneCoords, stationCoords]);
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState(null)
+  const [mapStatusOverride, setMapStatusOverride] = useState(null)
 
   // Geocode address to coordinates using Nominatim
   const geocodeAddress = async (address) => {
@@ -466,6 +429,7 @@ function OrderAccordion({ orderSummary, restaurants = [] }){
         console.log('🧾 Normalized order detail:', data)
         console.log('🧾 Raw order payload:', data?.raw)
         setDetail(data)
+        setMapStatusOverride(null)
 
         // Geocode addresses if coordinates not available
         setGeocoding(true)
@@ -547,6 +511,32 @@ function OrderAccordion({ orderSummary, restaurants = [] }){
     }
   }
 
+  const orderId = detail?.id || detail?._id || detail?.orderId || orderSummary.id || orderSummary._id || orderSummary.orderId
+  const mapStatus = (mapStatusOverride || detail?.status || orderSummary.status || '').toUpperCase()
+  const droneId = detail?.drone?.id ?? detail?.droneId
+  const canConfirmDelivery = Boolean(droneId) && ['DELIVERING','DRONE_ARRIVED','READY'].includes(mapStatus)
+
+  const handleConfirmReceived = async (event) => {
+    event?.preventDefault()
+    event?.stopPropagation()
+    if (!orderId) return
+    setConfirming(true)
+    setConfirmError(null)
+    try {
+      await confirmOrderReceived(orderId)
+      setDetail(prev => (prev ? { ...prev, status: 'COMPLETED' } : prev))
+      setMapStatusOverride('RETURNING')
+      if (typeof onAfterConfirm === 'function') {
+        onAfterConfirm(orderId)
+      }
+    } catch (error) {
+      const message = error?.response?.data?.message || error?.message || 'Không thể xác nhận đơn hàng'
+      setConfirmError(message)
+    } finally {
+      setConfirming(false)
+    }
+  }
+
   return (
     <div className={`order-accordion ${open? 'open':''}`}>
       <div className="acc-header" onClick={toggle}>
@@ -572,47 +562,22 @@ function OrderAccordion({ orderSummary, restaurants = [] }){
               )}
               
               {!geocoding && merchantCoords && deliveryCoords ? (
-                <>
-                  <DroneMap
-                    merchantLocation={{
-                      lat: merchantCoords.lat,
-                      lng: merchantCoords.lng,
-                      name: detail.merchantName || detail.restaurantName || 'Cửa hàng'
-                    }}
-                    deliveryLocation={{
-                      lat: deliveryCoords.lat,
-                      lng: deliveryCoords.lng,
-                      address: detail.deliveryAddress || orderSummary.deliveryAddress
-                    }}
-                    orderStatus={detail.status || orderSummary.status}
-                    autoAnimate={true}
-                  />
-                  {/* Nút xác nhận nhận hàng */}
-                  {String(detail.status || orderSummary.status).toUpperCase() === 'DELIVERING' && !confirmed && (
-                    <div style={{marginTop: 16, textAlign: 'center'}}>
-                      <button
-                        type="button"
-                        className="track-confirm-btn"
-                        disabled={confirming}
-                        onClick={async () => {
-                          setConfirming(true);
-                          try {
-                            await confirmOrderReceived(detail.id || orderSummary.id);
-                            setConfirmed(true);
-                            setDetail(prev => ({ ...prev, status: 'COMPLETED' }));
-                            setFlashMessage('Đã xác nhận nhận hàng!');
-                            setFlashType('success');
-                          } catch (err) {
-                            setFlashMessage(err?.response?.data?.message || err?.message || 'Xác nhận thất bại');
-                            setFlashType('error');
-                          } finally {
-                            setConfirming(false);
-                          }
-                        }}
-                      >{confirming ? 'Đang xác nhận...' : 'Tôi đã nhận được hàng'}</button>
-                    </div>
-                  )}
-                </>
+                <DroneMap
+                  merchantLocation={{
+                    lat: merchantCoords.lat,
+                    lng: merchantCoords.lng,
+                    name: detail.merchantName || detail.restaurantName || 'Cửa hàng'
+                  }}
+                  deliveryLocation={{
+                    lat: deliveryCoords.lat,
+                    lng: deliveryCoords.lng,
+                    address: detail.deliveryAddress || orderSummary.deliveryAddress
+                  }}
+                  orderStatus={mapStatus || 'CONFIRMED'}
+                  autoAnimate={true}
+                  droneId={droneId}
+                  droneStatus={detail?.drone?.status || detail?.droneStatus}
+                />
               ) : !geocoding && (
                 <div className="track-card">
                   <h3>🗺️ Bản đồ theo dõi Drone</h3>
@@ -696,6 +661,17 @@ function OrderAccordion({ orderSummary, restaurants = [] }){
                     </div>
                   )
                 })()}
+                {canConfirmDelivery && (
+                  <button
+                    type="button"
+                    className="track-confirm-btn"
+                    onClick={handleConfirmReceived}
+                    disabled={confirming}
+                  >
+                    {confirming ? 'Đang xác nhận...' : 'Đã nhận đơn hàng'}
+                  </button>
+                )}
+                {confirmError && <p className="track-confirm-error">{confirmError}</p>}
               </div>
               <div className="track-card">
                 <h3>Chi tiết đơn hàng</h3>
