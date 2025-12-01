@@ -6,7 +6,6 @@ import SearchBar from '../SearchBar/SearchBar'
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { StoreContext } from '../../context/StoreContext';
-import ValidationPopup from '../ValidationPopup/ValidationPopup';
 
 const Navbar = ({setShowLogin}) => {
 
@@ -19,9 +18,6 @@ const Navbar = ({setShowLogin}) => {
   const [pendingDeleteLines, setPendingDeleteLines] = useState([]);
   const [pendingDeleteItems, setPendingDeleteItems] = useState([]);
   const [closingDrawer, setClosingDrawer] = useState(false);
-  const [checkingDrawer, setCheckingDrawer] = useState(false);
-  const [validationResult, setValidationResult] = useState(null);
-  const [removingInvalid, setRemovingInvalid] = useState(false);
 
   const openDrawer = () => {
     if (closingDrawer) return; // prevent interrupting close animation
@@ -53,8 +49,7 @@ const Navbar = ({setShowLogin}) => {
     }, 200); // Delay 200ms trước khi ẩn dropdown
   };
   return (
-    <>
-    <div className='navbar'>
+    <div className = 'navbar'>
       <Link to = '/'><img src = {assets.logo} alt = " " className="logo"/></Link>
       <ul className="navbar-menu">
         <li className="navbar-search-wrap"><SearchBar /></li>
@@ -70,7 +65,7 @@ const Navbar = ({setShowLogin}) => {
            />
           <div className={getTotalCartAmount()===0?"":"dot"} />
         </div>
-        
+
         {/* Cart Drawer */}
         {showCartDrawer && (
           <div className={`cart-drawer-overlay ${closingDrawer ? 'is-closing' : ''}`} onClick={closeDrawer}>
@@ -196,21 +191,28 @@ const Navbar = ({setShowLogin}) => {
                       return;
                     }
                     try{
-                      setCheckingDrawer(true);
                       const result = await (validateCartVisibility?.());
                       if (result && !result.ok){
-                        // Auto close drawer before showing popup for cleaner UI
-                        closeDrawer();
-                        setValidationResult(result);
-                        return; // stop flow, show popup
+                        const msg = 'Một số món hiện không còn khả dụng/đang ẩn:\n- ' + result.invalid.join('\n- ') + '\n\nBạn có muốn xóa các món này khỏi giỏ hàng không?';
+                        const confirmRemove = window.confirm(msg);
+                        if (confirmRemove) {
+                          (result.invalidEntries || []).forEach(entry => {
+                            if (entry.type === 'item' && entry.itemId) {
+                              setCartItems(prev => ({ ...prev, [entry.itemId]: 0 }));
+                            } else if (entry.type === 'line' && entry.key) {
+                              removeCartLine(entry.key);
+                            }
+                          });
+                          alert('Đã xóa các món không còn khả dụng khỏi giỏ hàng.');
+                        }
+                        return;
                       }
                     }catch{}
-                    finally { setCheckingDrawer(false); }
                     closeDrawer();
                     navigate('/cart');
                   }}
                 >
-                  {checkingDrawer ? 'Đang kiểm tra…' : 'Thanh toán'} • {getTotalCartAmount()===0? '0đ' : new Intl.NumberFormat('vi-VN').format(getTotalCartAmount()) + 'đ'}
+                  Thanh toán • {getTotalCartAmount()===0? '0đ' : new Intl.NumberFormat('vi-VN').format(getTotalCartAmount()) + 'đ'}
                 </button>
               </div>
             </div>
@@ -245,31 +247,7 @@ const Navbar = ({setShowLogin}) => {
         )}
       </div>
     </div>
-    {validationResult && (
-      <ValidationPopup
-        invalidEntries={validationResult.invalidEntries || []}
-        checking={removingInvalid}
-        onRemove={() => {
-          if (removingInvalid) return;
-          setRemovingInvalid(true);
-          try {
-            (validationResult.invalidEntries || []).forEach(entry => {
-              if (entry.type === 'item' && entry.itemId) {
-                setCartItems(prev => ({ ...prev, [entry.itemId]: 0 }));
-              } else if (entry.type === 'line' && entry.key) {
-                removeCartLine(entry.key);
-              }
-            });
-          } finally {
-            setRemovingInvalid(false);
-            setValidationResult(null);
-          }
-        }}
-        onClose={() => setValidationResult(null)}
-      />
-    )}
-    </>
-  );
+  )
 }
 
 export default Navbar

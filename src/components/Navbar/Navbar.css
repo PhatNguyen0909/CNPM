@@ -1,15 +1,11 @@
 .navbar{
     padding: 20px 0px;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    position: relative;
 }
 .navbar .logo{
     width: 150px;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
 }
 .navbar-menu{
     display: flex;
@@ -17,15 +13,11 @@
     gap: 20px;
     color: rgb(29, 71, 81);
     font-size: 18px;
-    position: absolute;
-    left: 0;
 }
 .navbar-right{
     display: flex;
     align-items: center;
     gap: 40px;
-    position: absolute;
-    right: 0;
 }
 
 .navbar-right > button:not(.navbar-login-btn){
