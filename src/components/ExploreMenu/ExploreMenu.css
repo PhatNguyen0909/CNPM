@@ -51,6 +51,22 @@
     
 }
 
+@media (max-width: 900px){
+    .explore-menu{
+        gap: 14px;
+    }
+    .explore-menu h1{ font-size: 24px; }
+    .explore-menu-text{
+        max-width: 100%;
+        font-size: 15px;
+    }
+    .explore-menu-list{
+        gap: 18px;
+        justify-content: flex-start;
+    }
+    .explore-menu-list-item img{ width: 96px; }
+    .explore-menu-list-item p{ font-size: 16px; }
+}
 @media (max-width:1050px) {
     .explore-menu-text{
         max-width: 100%;

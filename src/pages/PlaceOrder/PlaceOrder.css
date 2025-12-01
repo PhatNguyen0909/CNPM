@@ -223,6 +223,23 @@
     margin: 5px 0;
 }
 
+@media (max-width: 900px){
+    .place-order{
+        flex-direction: column;
+        gap: 24px;
+        padding: 0 4%;
+        margin-top: 40px;
+    }
+    .place-order-left, .place-order-right{
+        max-width: 100%;
+    }
+    .place-order-left .multi-fields{ flex-direction: column; }
+    .payment-box{
+        flex-direction: column;
+        padding: 24px;
+    }
+    .payment-total{ padding-right: 0; margin-bottom: 12px; }
+}
 /* Responsive Design */
 @media (max-width: 768px) {
     .place-order {

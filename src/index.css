@@ -18,9 +18,23 @@ a{
   color: inherit;
 }
 .app{
-  width: 80%;
-  margin: auto;
-  margin-bottom: 80px;
+  width: min(1200px, 80%);
+  margin: 0 auto 80px;
+  padding: 0 12px;
+}
+@media (max-width: 1200px){
+  .app{ width: 90%; }
+}
+@media (max-width: 900px){
+  body{ background: #fff; }
+  .app{
+    width: 100%;
+    margin-bottom: 48px;
+    padding: 0 18px;
+  }
+}
+@media (max-width: 600px){
+  .app{ padding: 0 12px; }
 }
 @keyframes fadeIn{
   0%{

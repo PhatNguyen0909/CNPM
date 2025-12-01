@@ -120,3 +120,20 @@
 	color:#b91c1c;
 	font-size:13px;
 }
+
+@media (max-width: 900px){
+	.track-page{ padding: 18px; }
+	.track-tabs{ flex-wrap: wrap; }
+	.track-refresh{ width: 100%; text-align: center; }
+	.steps{ flex-direction: column; gap: 18px; }
+	.step{ width: 100%; flex-direction: row; align-items: center; justify-content: flex-start; }
+	.step-label{ font-size: 14px; }
+	.progress-line{ height: 6px; }
+	.item-line{ flex-direction: column; align-items: flex-start; }
+	.order-info-row{ flex-direction: column; gap: 6px; }
+}
+@media (max-width: 600px){
+	.track-page{ padding: 14px; }
+	.track-card{ padding: 14px; }
+	.track-tab{ width: 100%; justify-content: center; }
+}

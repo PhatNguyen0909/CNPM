@@ -1,15 +1,15 @@
 .header{
-    height: 34vw;
+    height: clamp(260px, 34vw, 440px);
     margin: 30px auto;
-    background: url('../../assets/header_img2.png') no-repeat; 
-    background-size: contain;
+    background: url('../../assets/header_img2.png') no-repeat center/cover; 
     position: relative;
+    border-radius: 24px;
+    overflow: hidden;
 }
 
 .header-contents {
     position: absolute;
-    top: 49%;                 /* canh giữa theo chiều dọc */
-    left: 7;                 /* đẩy vào trong 1 chút cho thoáng */
+    top: 49%;                 /* canh giữa theo chiều dọc */                 /* đẩy vào trong 1 chút cho thoáng */
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
@@ -54,20 +54,50 @@
         max-width: 40%;
     }
 }
-@media(max-width: 750px){
+@media(max-width: 900px){
+    .header{
+        height: min(72vw, 420px);
+        border-radius: 18px;
+    }
+    .header-contents{
+        position: static;
+        transform: none;
+        max-width: 100%;
+        background: rgba(0,0,0,.45);
+        border-radius: 18px;
+        padding: 40px;
+        margin-bottom: 10px;
+        margin-top: 10px;
+        margin-left: 35px;
+        backdrop-filter: blur(10px);
+    }
+    .header-contents p{
+        display: block;
+        font-size: 10px;
+    }
+    .header-contents h2{
+        font-size: 15px;
+    }
+    .header-contents button{
+        padding: 14px 26px;
+        font-size: 14px;
+        margin: 0; 
+    }
+}
+@media(max-width: 650px){
     .header-contents {
         max-width: 80%;
     }
     .header-contents h2{
-        max-width: 60%;
-        margin-top: 2vw;
-        margin-left: -4.5vw;
+        max-width: 100%;
+        margin: 0;
+        font-size: clamp(24px, 7vw, 34px);
     }
     .header-contents p{
-        display: none; 
+        margin: 0;
     }
     .header-contents button{
-        padding: 2vw 4vw;
-        margin-top: -4.5vw;
+        width: 100%;
+        justify-content: center;
     }
 }

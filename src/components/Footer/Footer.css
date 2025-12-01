@@ -47,6 +47,22 @@
     margin-bottom: -3vw;
 }
 
+@media (max-width: 900px){
+    .footer{
+        padding: 40px 24px;
+    }
+    .footer-content{
+        grid-template-columns: 1fr;
+        gap: 40px;
+        text-align: left;
+    }
+    .footer-content-left, .footer-content-right, .footer-content-center{
+        align-items: left;
+    }
+    .footer-social-icons img{ margin-right: 8px; }
+    .img-logo{margin-left:85px;}
+}
+
 @media (max-width:750px){
     .footer-content{
         display: flex;
