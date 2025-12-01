@@ -100,6 +100,21 @@
     align-self: flex-end;
 }
 
+@media (max-width: 900px){
+    .cart{ margin-top: 60px; }
+    .cart-container{ padding: 0 12px; }
+    .cart-header{ flex-direction: column; align-items: flex-start; gap: 6px; }
+    .cart-restaurant{ flex-direction: column; align-items: flex-start; gap: 8px; }
+    .cart-panel{ padding: 14px; }
+    .cart-line{
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .line-image{ width: 100%; height: 160px; }
+    .line-right{ width: 100%; justify-content: space-between; }
+    .cart-total button{ width: 100%; }
+}
+
 @media(max-width:750px){
     .cart-bottom{
         flex-direction: column-reverse;

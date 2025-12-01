@@ -95,6 +95,12 @@
   transform: translateY(-1px);
 }
 
+@media (max-width: 900px){
+  .payment-result-page{ padding: 32px 12px; }
+  .payment-result-card{ padding: 26px; border-radius: 16px; }
+  .result-details{ grid-template-columns: 1fr; }
+}
+
 @media (min-width: 640px) {
   .result-actions {
     flex-direction: row;

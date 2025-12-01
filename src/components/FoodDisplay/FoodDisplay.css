@@ -67,6 +67,19 @@
 .carousel-arrow:hover{ background:#f9fafb; }
 
 @media (max-width: 900px){
+    .food-display{ margin: 24px 0; }
+    .food-display-list{
+        grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
+        gap: 20px;
+        row-gap: 28px;
+    }
+    .menu-cat-bar{ flex-wrap: wrap; position: static; gap: 12px; }
+    .menu-cat-bar .chips{ flex-wrap: wrap; gap: 10px; }
+    .carousel-arrow{ display: none; }
+    .featured-row{ gap: 8px; }
+}
+
+@media (max-width: 900px){
     .featured-card{ flex: 0 0 calc((100% - 20px) / 2); }
 }
 @media (max-width: 600px){
@@ -136,12 +149,31 @@
     position: absolute;
     top: 30px;
     left: 30px;
-    width: 45px;
-    height: 36px;
-    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    background: #ffffff;
+    border: 1px solid rgba(15,23,42,0.12);
+    box-shadow: 0 8px 24px rgba(15,23,42,0.16);
+    color: #111827;
+    transition: transform .15s ease, box-shadow .15s ease;
+    z-index: 5;
+}
+.Back-btn:hover{ transform: translateY(-1px); box-shadow:0 12px 28px rgba(15,23,42,0.18); }
+.Back-btn:active{ transform: scale(0.96); }
 
+@media (max-width: 900px){
+    .Back-btn{
+        top: 90px;
+        left: 16px;
+        width: 40px;
+        height: 40px;
+        background: rgba(255,255,255,0.95);
+        border: 1px solid rgba(148,163,184,0.6);
+        box-shadow: 0 6px 18px rgba(15,23,42,0.12);
+    }
 }

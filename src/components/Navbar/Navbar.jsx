@@ -179,7 +179,7 @@ const Navbar = ({setShowLogin}) => {
                     <p style={{color:'#6b7280'}}>Giỏ hàng trống</p>
                   )}
                 </div>
-                <p style={{color:'#6b7280', marginTop:12}}>Tổng: <b style={{color:'#f77c6eff'}}>{getTotalCartAmount()===0? '0đ' : new Intl.NumberFormat('vi-VN').format(getTotalCartAmount()) + 'đ'}</b></p>
+
               </div>
               <div className="cart-drawer-footer">
                 <button

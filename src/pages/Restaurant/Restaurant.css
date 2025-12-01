@@ -97,3 +97,15 @@
     font-size: 12px;
     font-weight: 600;
 }
+
+@media (max-width: 900px){
+    .restaurant-item{ margin-bottom: 16px; }
+    .restaurant-item-image{ height: 180px; }
+    .restaurant-item-name-rating{ flex-direction: column; align-items: flex-start; gap: 6px; }
+    .rating img{ width: 48px; }
+}
+@media (max-width: 600px){
+    .restaurant-item{ padding-bottom: 6px; }
+    .restaurant-item-info{ padding: 16px; }
+    .restaurant-item-name-rating p{ font-size: 16px; }
+}
