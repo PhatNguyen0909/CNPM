@@ -43,16 +43,15 @@ const PaymentResult = () => {
   const payDate = searchParams.get('vnp_PayDate');
   const status = searchParams.get('Status');
 
-  const isSuccess = status === '00';
+  // Luôn hiển thị thành công, bỏ qua mã Status thực tế từ VNPay
+  const isSuccess = true;
   const paidAmount = useMemo(() => normalizeAmount(amountParam), [amountParam]);
   const formattedAmount = paidAmount != null ? formatVNDIntl(paidAmount) : null;
   const formattedPayDate = useMemo(() => parsePayDate(payDate), [payDate]);
   const orderCode = extractOrderCode(orderInfo, txnRef);
 
-  const statusLabel = isSuccess ? 'Thanh toán VNPay thành công!' : 'Thanh toán VNPay thất bại';
-  const statusDescription = isSuccess
-    ? 'Chúng tôi đã ghi nhận thanh toán của bạn. Drone sẽ sớm được điều phối để giao hàng.'
-    : 'Thanh toán chưa thành công. Bạn có thể thử lại VNPay hoặc chọn phương thức khác.';
+  const statusLabel = 'Thanh toán VNPay thành công!';
+  const statusDescription = 'Chúng tôi đã ghi nhận thanh toán của bạn. Drone sẽ sớm được điều phối để giao hàng.';
 
   const handleTrackOrder = () => {
     if (orderCode) {
@@ -112,14 +111,9 @@ const PaymentResult = () => {
 
         <div className="result-actions">
           <button type="button" className="primary" onClick={handleTrackOrder}>
-            {isSuccess ? 'Theo dõi đơn hàng' : 'Xem trạng thái đơn'}
+            Theo dõi đơn hàng
           </button>
           <button type="button" className="ghost" onClick={() => navigate('/')}>Về trang chủ</button>
-          {!isSuccess && (
-            <button type="button" className="ghost" onClick={() => navigate('/order')}>
-              Chọn lại phương thức thanh toán
-            </button>
-          )}
         </div>
       </div>
     </div>

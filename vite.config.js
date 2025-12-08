@@ -54,7 +54,7 @@ export default defineConfig({
     ],
     proxy: {
       '/potato-api': {
-        target: process.env.VITE_PROXY_TARGET || 'https://trustees-logical-seed-modes.trycloudflare.com/potato-api',
+        target: process.env.VITE_PROXY_TARGET || 'https://dollar-comes-statement-ethics.trycloudflare.com/potato-api',
         changeOrigin: true,
         secure: false,
         ws: false,
