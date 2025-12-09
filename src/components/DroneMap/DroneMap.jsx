@@ -1,10 +1,26 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './DroneMap.css';
 import { updateDroneLocation } from '../../services/droneAdminAPI';
+
+const LEG_DURATION_MS = 60 * 1000;
+const MIDWAY_POPUP_MS = 10000;
+
+const clampProgress = (value) => Math.max(0, Math.min(1, value));
+const computeProgressAlongPath = (startLat, startLng, endLat, endLng, currentLat, currentLng) => {
+  const inputs = [startLat, startLng, endLat, endLng, currentLat, currentLng];
+  if (inputs.some((v) => typeof v !== 'number')) return null;
+  const dx = endLat - startLat;
+  const dy = endLng - startLng;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq <= 0) return null;
+  const projection = ((currentLat - startLat) * dx + (currentLng - startLng) * dy) / lenSq;
+  return clampProgress(projection);
+};
 
 const DroneMap = ({ 
   merchantLocation, // { lat, lng, name }
   deliveryLocation, // { lat, lng, address }
+  droneLocation,
   orderStatus = 'CONFIRMED',
   autoAnimate = true,
   droneId
@@ -17,6 +33,8 @@ const DroneMap = ({
   const [mapReady, setMapReady] = useState(false);
   const [dronePosition, setDronePosition] = useState(0); // 0-100%
   const animationRef = useRef(null);
+  const midwayTimerRef = useRef(null);
+  const midwayShownRef = useRef({ delivering: false, returning: false });
   const lastReturnSyncRef = useRef(0);
   const merchantLat = merchantLocation?.lat;
   const merchantLng = merchantLocation?.lng;
@@ -24,6 +42,11 @@ const DroneMap = ({
   const deliveryLat = deliveryLocation?.lat;
   const deliveryLng = deliveryLocation?.lng;
   const deliveryAddress = deliveryLocation?.address;
+  const droneLat = droneLocation?.lat;
+  const droneLng = droneLocation?.lng;
+
+  const [midwayVisible, setMidwayVisible] = useState(false);
+  const [midwayMessage, setMidwayMessage] = useState('');
 
   // Check if Leaflet is loaded
   useEffect(() => {
@@ -35,6 +58,36 @@ const DroneMap = ({
     }, 100);
 
     return () => clearInterval(checkLeaflet);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (midwayTimerRef.current) {
+        clearTimeout(midwayTimerRef.current);
+        midwayTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    midwayShownRef.current = { delivering: false, returning: false };
+    setMidwayVisible(false);
+    if (midwayTimerRef.current) {
+      clearTimeout(midwayTimerRef.current);
+      midwayTimerRef.current = null;
+    }
+  }, [orderStatus, merchantLat, merchantLng, deliveryLat, deliveryLng]);
+
+  const showMidwayToast = useCallback((message) => {
+    setMidwayMessage(message);
+    setMidwayVisible(true);
+    if (midwayTimerRef.current) {
+      clearTimeout(midwayTimerRef.current);
+    }
+    midwayTimerRef.current = setTimeout(() => {
+      setMidwayVisible(false);
+      midwayTimerRef.current = null;
+    }, MIDWAY_POPUP_MS);
   }, []);
 
   // Initialize map
@@ -143,8 +196,33 @@ const DroneMap = ({
     const deliveryCoords = [deliveryLat, deliveryLng];
 
     let progress = 0;
-    const duration = 5000; // 5 seconds for full journey
-    const startTime = Date.now();
+    const projectedProgress = computeProgressAlongPath(
+      merchantLat,
+      merchantLng,
+      deliveryLat,
+      deliveryLng,
+      droneLat,
+      droneLng
+    );
+    if (projectedProgress !== null) {
+      progress = projectedProgress;
+      const projectedLat = merchantCoords[0] + (deliveryCoords[0] - merchantCoords[0]) * progress;
+      const projectedLng = merchantCoords[1] + (deliveryCoords[1] - merchantCoords[1]) * progress;
+      droneMarkerRef.current.setLatLng([projectedLat, projectedLng]);
+      setDronePosition(Math.round(progress * 100));
+
+      if (progress >= 1) {
+        droneMarkerRef.current.bindPopup('✅ Drone đã đến!').openPopup();
+        return;
+      }
+
+      if (progress >= 0.5) {
+        midwayShownRef.current.delivering = true;
+      }
+    }
+
+    const duration = LEG_DURATION_MS;
+    const startTime = Date.now() - progress * duration;
 
     const animate = () => {
       const elapsed = Date.now() - startTime;
@@ -172,6 +250,11 @@ const DroneMap = ({
         }
       }
 
+      if (!midwayShownRef.current.delivering && progress >= 0.5) {
+        midwayShownRef.current.delivering = true;
+        showMidwayToast('Drone đã đi được nửa quãng đường, chuẩn bị nhận hàng nhé!');
+      }
+
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
@@ -187,7 +270,7 @@ const DroneMap = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [mapReady, merchantLat, merchantLng, deliveryLat, deliveryLng, orderStatus, autoAnimate]);
+  }, [mapReady, merchantLat, merchantLng, deliveryLat, deliveryLng, orderStatus, autoAnimate, droneLat, droneLng]);
 
   // Animate drone returning to station (client-only mock path with API sync)
   useEffect(() => {
@@ -230,8 +313,33 @@ const DroneMap = ({
       lineJoin: 'round',
     }).addTo(mapInstanceRef.current);
 
-    const duration = 10000; // 10s return flight
-    const startTime = Date.now();
+    const duration = LEG_DURATION_MS;
+    const projectedProgress = computeProgressAlongPath(
+      startCoords[0],
+      startCoords[1],
+      endCoords[0],
+      endCoords[1],
+      droneLat,
+      droneLng
+    );
+    let initialProgress = 0;
+    if (projectedProgress !== null) {
+      initialProgress = projectedProgress;
+      const projectedLat = startCoords[0] + (endCoords[0] - startCoords[0]) * initialProgress;
+      const projectedLng = startCoords[1] + (endCoords[1] - startCoords[1]) * initialProgress;
+      droneMarkerRef.current.setLatLng([projectedLat, projectedLng]);
+      setDronePosition(Math.round(initialProgress * 100));
+
+      if (initialProgress >= 1) {
+        droneMarkerRef.current.bindPopup('🏠 Drone đã về trạm!').openPopup();
+        return;
+      }
+
+      if (initialProgress >= 0.5) {
+        midwayShownRef.current.returning = true;
+      }
+    }
+    const startTime = Date.now() - initialProgress * duration;
     const SYNC_INTERVAL = 3000;
 
     const animateReturn = () => {
@@ -253,6 +361,11 @@ const DroneMap = ({
         }
       }
 
+      if (!midwayShownRef.current.returning && progress >= 0.5) {
+        midwayShownRef.current.returning = true;
+        showMidwayToast('Drone đang quay về trạm (đã đi được nửa đường).');
+      }
+
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animateReturn);
       } else {
@@ -270,7 +383,7 @@ const DroneMap = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [mapReady, orderStatus, autoAnimate, merchantLat, merchantLng, deliveryLat, deliveryLng]);
+  }, [mapReady, orderStatus, autoAnimate, merchantLat, merchantLng, deliveryLat, deliveryLng, droneLat, droneLng]);
 
   // Update drone position based on order status
   useEffect(() => {
@@ -297,15 +410,60 @@ const DroneMap = ({
     }
   }, [orderStatus, merchantLat, merchantLng, deliveryLat, deliveryLng]);
 
+  const statusText = useMemo(() => {
+    switch (orderStatus) {
+      case 'CONFIRMED':
+        return '🏪 Đơn hàng đã xác nhận - Drone đang chờ tại cửa hàng';
+      case 'DELIVERING':
+        return '✈️ Drone đang bay đến địa chỉ giao hàng';
+      case 'DRONE_ARRIVED':
+        return '📍 Drone đã đến - Vui lòng nhận hàng';
+      case 'COMPLETED':
+        return '✅ Đơn hàng đã hoàn thành';
+      case 'RETURNING':
+        return '🛬 Drone đang quay về trạm';
+      default:
+        return 'ℹ️ Đang xử lý đơn hàng';
+    }
+  }, [orderStatus]);
+
   return (
     <div className="drone-map-container">
-      <div className="map" ref={mapRef} style={{ height: '100vh' }} />
-      <div className="drone-info">
-        <div className="drone-status">
-          Trạng thái đơn hàng: <strong>{orderStatus}</strong>
+      {midwayVisible && (
+        <div className="drone-midway-toast" role="status">
+          <div className="drone-midway-card">
+            <span className="drone-midway-icon">⚡</span>
+            <div>
+              <p className="drone-midway-title">Drone đã đi được 1/2 chặng</p>
+              <p className="drone-midway-message">{midwayMessage}</p>
+            </div>
+          </div>
         </div>
-        <div className="drone-position">
-          Vị trí drone: {dronePosition}%
+      )}
+      <div className="drone-map-header">
+        <div className="status-text">{statusText}</div>
+        {(orderStatus === 'DELIVERING' || orderStatus === 'RETURNING') && (
+          <div className="progress-info">
+            <div className="progress-bar">
+              <div className="progress-fill" style={{ width: `${dronePosition}%` }}></div>
+            </div>
+            <div className="progress-text">{dronePosition}%</div>
+          </div>
+        )}
+      </div>
+      <div className="map-container" ref={mapRef}></div>
+      <div className="drone-map-legend">
+        <div className="legend-item">
+          <span className="legend-icon red">🏪</span>
+          <span className="legend-text">{merchantName || 'Cửa hàng'}</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-icon blue">✈️</span>
+          <span className="legend-text">Drone giao hàng</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-icon green">📍</span>
+          <span className="legend-text">{deliveryAddress || 'Điểm giao hàng'}</span>
         </div>
       </div>
     </div>
