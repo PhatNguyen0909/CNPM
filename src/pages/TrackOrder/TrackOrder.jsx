@@ -573,6 +573,10 @@ function OrderAccordion({ orderSummary, restaurants = [], onAfterConfirm }){
                     lng: deliveryCoords.lng,
                     address: detail.deliveryAddress || orderSummary.deliveryAddress
                   }}
+                  droneLocation={detail?.drone?.latitude != null && detail?.drone?.longitude != null ? {
+                    lat: detail.drone.latitude,
+                    lng: detail.drone.longitude,
+                  } : null}
                   orderStatus={mapStatus || 'CONFIRMED'}
                   autoAnimate={true}
                   droneId={droneId}

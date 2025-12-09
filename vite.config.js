@@ -54,7 +54,7 @@ export default defineConfig({
     ],
     proxy: {
       '/potato-api': {
-        target: process.env.VITE_PROXY_TARGET || 'https://rise-minimum-seminar-overhead.trycloudflare.com/potato-api',
+        target: process.env.VITE_PROXY_TARGET || 'https://integrity-release-measuring-highly.trycloudflare.com/potato-api',
         changeOrigin: true,
         secure: false,
         ws: false,
